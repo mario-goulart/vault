@@ -1,0 +1,7 @@
+;; -*- scheme -*-
+(use posix make)
+
+(change-directory "src")
+
+(include "vault-version.scm")
+(include "vault-build.scm")

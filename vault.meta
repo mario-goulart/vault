@@ -1,0 +1,11 @@
+;; -*- scheme -*-
+
+((synopsis "A tool to track things")
+ (author "Mario Domenech Goulart")
+ (category tools)
+ (license "BSD")
+ (depends make
+          http-client
+          simple-sha1
+          ssql)
+ (test-depends))
