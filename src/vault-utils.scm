@@ -4,6 +4,25 @@
 (use data-structures extras)
 (use vault-config)
 
+(define-record vault-obj
+  id
+  summary
+  comment
+  filename
+  creation-time
+  modification-time
+  tags)
+
+(define-record-printer (vault-obj obj out)
+  (fprintf out "#<vault-obj id=~a summary=~a filename=~a creation_time=~a modification_time=~a tags=~a comment=~a>"
+           (vault-obj-id obj)
+           (vault-obj-summary obj)
+           (vault-obj-filename obj)
+           (vault-obj-creation-time obj)
+           (vault-obj-modification-time obj)
+           (vault-obj-tags obj)
+           (vault-obj-comment obj)))
+
 ;;; Messages
 (define (printer port prefix fmt args)
   (apply fprintf `(,port
@@ -23,5 +42,10 @@
   (when (< level (debug-level))
     (printer (current-error-port) (conc "DEBUG " level) fmt args)))
 
- 
+;;; Exiting
+(define (die! fmt . args)
+  (apply problem (cons fmt args))
+  (exit 1))
+
+
 ) ;; end module

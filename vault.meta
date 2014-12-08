@@ -5,6 +5,7 @@
  (category tools)
  (license "BSD")
  (depends make
+          matchable
           http-client
           simple-sha1
           ssql)
