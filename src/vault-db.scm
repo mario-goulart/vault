@@ -2,7 +2,8 @@
 
 (initialize-database
  db-insert-object
- db-dump-objects)
+ db-dump-objects
+ db-list-tags)
 
 (import chicken scheme)
 (use srfi-13)
@@ -171,5 +172,14 @@ create table objs_tags (
                                                modification_time
                                                tags)))))
              objs)))))
+
+(define (db-list-tags)
+  ;; FIXME: todo list count of objects that contain each tag
+  (call-with-database (db-file)
+    (lambda (db)
+      (db-query db
+        `(select (distinct (columns label))
+                 (from tags)
+                 (order (asc label)))))))
 
 ) ;; end module

@@ -6,6 +6,7 @@
  usage
  help-note cmd-note
  help-dump cmd-dump
+ help-list-tags cmd-list-tags
  )
 
 (import chicken scheme)
@@ -48,6 +49,8 @@ Usage: #this <command> [<options>]
 #help-note
 
 #help-dump
+
+#help-list-tags
 
 EOF
              port)
@@ -94,7 +97,7 @@ EOF
 (define help-dump
   #<#EOF
 dump
-  Dump the database content
+  Dump the database content.
 EOF
 )
 
@@ -119,5 +122,18 @@ EOF
          (printf "  last modified: ~a\n" last-modified))
        (newline)))
    (db-dump-objects)))
+
+;;; list-tags
+(define help-list-tags
+  #<#EOF
+list-tags
+  List tags.
+EOF
+)
+
+(define (cmd-list-tags)
+  (for-each (lambda (tag)
+              (print (car tag)))
+            (db-list-tags)))
 
 ) ;; end module
