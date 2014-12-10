@@ -84,7 +84,23 @@
                            (map mod.import.so modules)
                            (list "vault")))
 
+;; install
+(add-rule! "install" '("build")
+           (lambda ()
+             ;; Command line app
+             (install-program 'vault
+                              '("vault")
+                              `((version ,vault-version)))
+             ;; Modules
+             (for-each (lambda (mod)
+                         (install-extension
+                          mod
+                          (list (mod.import.so mod) (mod.so mod))
+                          `((version ,vault-version))))
+                       modules)))
+
+
 ;; all
-(add-rule! "all" '("build"))
+(add-rule! "all" '("install"))
 
 (make/proc *rules* (or make-targets "all"))
