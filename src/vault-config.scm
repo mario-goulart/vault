@@ -11,16 +11,40 @@
 (import chicken scheme)
 (use files posix)
 
-(define vault-home
-  (make-parameter
-   (let ((home (get-environment-variable "HOME"))) ;; FIXME: windows?
-     (make-pathname home ".vault"))))
+;; Regular srfi-39 parameters don't work well when we have
+;; interdependencies among them.  Example:
+;;
+;; (define foo (make-parameter 'foo))
+;; (define bar (make-parameter (foo)))
+;; (bar) ; => foo
+;; (foo 'foo2)
+;; (bar) ; => foo
+;;
+;; For our purposes, we want bar to yield foo2 in the last line of the
+;; example above.  So, we need something more dynamic, with pointer
+;; semantic for bindings, which is provided by define-dynamic.
+;;
+;; Note that, unlike srfi-39 parameters, variables defined with
+;; define-dynamic are not thread-safe.
+(define-syntax define-dynamic
+  (syntax-rules ()
+    ((_ var value)
+     (define var
+       (let ((slot (lambda () value)))
+         (lambda args
+           (if (null? args)
+               (slot)
+               (set! slot (lambda () (car args))))))))))
 
-(define db-file
-  (make-parameter (make-pathname (vault-home) "vault.db")))
+(define-dynamic vault-home
+  (let ((home (get-environment-variable "HOME"))) ;; FIXME: windows?
+    (make-pathname home ".vault")))
 
-(define download-dir
-  (make-parameter (make-pathname (vault-home) "downloads")))
+(define-dynamic db-file
+  (make-pathname (vault-home) "vault.db"))
+
+(define-dynamic download-dir
+  (make-pathname (vault-home) "downloads"))
 
 (define downloadable-mime-types
   (make-parameter
