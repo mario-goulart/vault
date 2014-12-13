@@ -15,10 +15,6 @@
 (use http-client intarweb simple-sha1 uri-common)
 (use vault-config vault-utils vault-mime-types vault-db)
 
-;;; Constants
-(define config-file
-  (make-pathname (get-environment-variable "HOME") ".vault.conf"))
-
 
 ;;; Initialization
 (define (initialize-home)
@@ -27,7 +23,7 @@
     (initialize-database (db-file)))
   (create-directory (download-dir) 'recursively))
 
-(define (load-config)
+(define (load-config config-file)
   (cond ((file-read-access? config-file)
          (debug 2 "Loading user configuration file ~a" config-file)
          (load config-file))

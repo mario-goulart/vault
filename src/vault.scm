@@ -1,10 +1,14 @@
 (module vault-cmd ()
 
 (import chicken scheme)
+(use files posix)
 (use vault-utils vault-lib vault-db)
 
 (initialize-home)
-(load-config)
+
+(load-config
+ (or (get-environment-variable "VAULT_CONFIG")
+     (make-pathname (get-environment-variable "HOME") ".vault.conf")))
 
 ;;; Initial command line parsing
 (let* ((args (command-line-arguments)))
