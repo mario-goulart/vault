@@ -13,6 +13,10 @@
 (let* ((args (command-line-arguments)))
   (when (null? args)
     (usage 1))
+  (when (or (member "-h" args)
+            (member "-help" args)
+            (member "--help" args))
+    (usage 0))
   (let ((cmd (string->symbol (car args))))
     (case cmd
       ((note) (cmd-note (cdr args)))
