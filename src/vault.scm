@@ -19,7 +19,7 @@
       ((note) (cmd-note (cdr args)))
       ((dump) (cmd-dump))
       ((list-tags) (cmd-list-tags))
-      ;((uri) (cmd-uri (cdr args)))
+      ((uri) (cmd-uri (cdr args)))
       (else (die! "Invalid command: ~a" cmd)))))
 
 ) ;; end module

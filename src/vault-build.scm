@@ -33,9 +33,10 @@
 ;; For libraries only.  The command line app deps doesn't belong here.
 (define modules/deps
   `((vault-config)
+    (vault-mime-types)
     (vault-utils vault-config)
     (vault-db vault-config vault-utils)
-    (vault-lib vault-config vault-utils vault-db)
+    (vault-lib vault-config vault-utils vault-mime-types vault-db)
     ))
 
 (define modules (map car modules/deps))

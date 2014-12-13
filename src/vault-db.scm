@@ -125,8 +125,8 @@ create table objs_tags (
                        (values #(,summary
                                  ,comment
                                  ,filename
-                                 CURRENT_TIMESTAMP
-                                 CURRENT_TIMESTAMP))))
+                                 |datetime(CURRENT_TIMESTAMP, 'localtime')|
+                                 |datetime(CURRENT_TIMESTAMP, 'localtime')|))))
                    (let ((obj-id (last-insert-rowid db)))
                      (db-link-object-tags db obj-id tags))))
              #t))))
