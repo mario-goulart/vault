@@ -198,7 +198,9 @@ EOF
            (filename (vault-obj-filename obj))
            (creation-time (vault-obj-creation-time obj))
            (last-modified (vault-obj-modification-time obj)))
-       (printf "* ~a\n" (vault-obj-summary obj))
+       (printf "[~a] ~a\n"
+               (vault-obj-id obj)
+               (vault-obj-summary obj))
        (unless (null? tags)
          (printf "  tags: ~S\n" tags))
        (unless (null? comment)
