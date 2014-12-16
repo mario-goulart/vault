@@ -3,7 +3,8 @@
 (initialize-database
  db-insert-object
  db-dump-objects
- db-list-tags)
+ db-list-tags
+ db-get-vault-objects)
 
 (import chicken scheme)
 (use srfi-13)
@@ -143,35 +144,39 @@ create table objs_tags (
                               (= tags.tag_id objs_tags.tag_id)))
                   (order (asc label))))))
 
+(define (db-get-vault-objects db #!key where)
+  (let ((objs (db-query db
+                `(select (columns obj_id
+                                  summary
+                                  comment
+                                  filename
+                                  creation_time
+                                  modification_time)
+                         (from vault)
+                         ,(if where
+                              `(where ,where)
+                              '())))))
+    (map (lambda (obj)
+           (match-let (((obj-id
+                         summary
+                         comment
+                         filename
+                         creation_time
+                         modification_time)
+                        obj))
+             (let ((tags (db-object-tags db obj-id)))
+               (apply make-vault-obj (list obj-id
+                                           summary
+                                           comment
+                                           filename
+                                           creation_time
+                                           modification_time
+                                           tags)))))
+         objs)))
+
 (define (db-dump-objects)
   ;; Return a list of vault objects
-  (call-with-database (db-file)
-    (lambda (db)
-      (let ((objs (db-query db
-                    `(select (columns obj_id
-                                      summary
-                                      comment
-                                      filename
-                                      creation_time
-                                      modification_time)
-                             (from vault)))))
-        (map (lambda (obj)
-               (match-let (((obj-id
-                             summary
-                             comment
-                             filename
-                             creation_time
-                             modification_time)
-                            obj))
-                 (let ((tags (db-object-tags db obj-id)))
-                   (apply make-vault-obj (list obj-id
-                                               summary
-                                               comment
-                                               filename
-                                               creation_time
-                                               modification_time
-                                               tags)))))
-             objs)))))
+  (call-with-database (db-file) db-get-vault-objects))
 
 (define (db-list-tags)
   ;; FIXME: todo list count of objects that contain each tag
