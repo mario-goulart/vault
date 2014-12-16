@@ -9,4 +9,4 @@
           http-client
           simple-sha1
           ssql)
- (test-depends))
+ (test-depends test))
