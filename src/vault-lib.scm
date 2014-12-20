@@ -147,8 +147,9 @@ EOF
       (call-with-input-request*
        (make-request uri: (uri-reference uri))
        #f
-       (lambda (port headers)
-         (let* ((content-type (header-value 'content-type headers 'unknown))
+       (lambda (port response)
+         (let* ((headers (response-headers response))
+                (content-type (header-value 'content-type headers 'unknown))
                 (data (cond ((and download?
                                   (memq content-type
                                         (downloadable-mime-types)))

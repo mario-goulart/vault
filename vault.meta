@@ -6,7 +6,7 @@
  (license "BSD")
  (depends make
           matchable
-          http-client
+          (http-client "0.7.2")
           simple-sha1
           ssql)
  (test-depends test))
