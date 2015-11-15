@@ -30,13 +30,17 @@
        ,(lambda ()
           (compile -s ,@csc-options ,(mod.import.scm mod-path)))))))
 
+(define (command-dep command)
+  (make-pathname "commands" (symbol->string command) "scm"))
+
 ;; For libraries only.  The command line app deps doesn't belong here.
 (define modules/deps
   `((vault-config)
     (vault-mime-types)
     (vault-utils vault-config)
     (vault-db vault-config vault-utils)
-    (vault-lib vault-config vault-utils vault-mime-types vault-db)
+    (vault-lib vault-config vault-utils vault-mime-types vault-db
+               ,(map command-dep '(dump list-tags note uri)))
     ))
 
 (define modules (map car modules/deps))
@@ -65,11 +69,19 @@
 
 ;; Module rules
 (set! *rules*
-      (append (apply append
-                     (map (lambda (mod/deps)
-                            (mod-rule (car mod/deps) (cdr mod/deps)))
-                          modules/deps))
-              *rules*))
+      (append
+       (apply append
+              (map (lambda (mod/deps)
+                     (mod-rule (car mod/deps)
+                               (remove pair? (cdr mod/deps))
+                               non-mod-deps: (let ((non-mod
+                                                    (filter pair?
+                                                            (cdr mod/deps))))
+                                               (if (null? non-mod)
+                                                   '()
+                                                   (car non-mod)))))
+                   modules/deps))
+       *rules*))
 
 ;; Rule for the command line application
 (add-rule! "vault" (cons "vault.scm"
