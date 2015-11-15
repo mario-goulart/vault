@@ -6,6 +6,7 @@
  (license "BSD")
  (depends make
           matchable
+          html-parser
           (http-client "0.7.2")
           simple-sha1
           ssql)

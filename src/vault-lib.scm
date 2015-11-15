@@ -11,8 +11,8 @@
  )
 
 (import chicken scheme)
-(use data-structures extras irregex files posix utils)
-(use http-client intarweb simple-sha1 uri-common)
+(use data-structures extras irregex files posix ports utils)
+(use html-parser http-client intarweb simple-sha1 uri-common)
 (use vault-config vault-utils vault-mime-types vault-db)
 
 
@@ -115,7 +115,10 @@ EOF
 (define (parse-title data)
   (and-let* ((m (irregex-search "<title>([^>]+)</title>" data))
              ((irregex-match-valid-index? m 1)))
-    (irregex-match-substring m 1)))
+    (with-input-from-string
+        (string-translate* (irregex-match-substring m 1)
+                           '(("\n" . "")))
+      html-strip)))
 
 (define (cmd-uri args)
   (when (null? args)
