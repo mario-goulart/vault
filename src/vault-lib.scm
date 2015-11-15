@@ -9,6 +9,7 @@
  help-list-tags cmd-list-tags
  help-uri cmd-uri
  help-del cmd-del
+ help-search cmd-search
  )
 
 (import chicken scheme)
@@ -21,6 +22,7 @@
 (include "commands/dump.scm")
 (include "commands/list-tags.scm")
 (include "commands/del.scm")
+(include "commands/search.scm")
 
 ;;; Initialization
 (define (initialize-home)
@@ -56,6 +58,8 @@ Usage: #this <command> [<options>]
 
 #help-del
 
+#help-search
+
 EOF
              port)
     (when exit-code
@@ -73,5 +77,27 @@ EOF
   (if (null? (cdr args))
       (die! "-t requires an argument.")
       (cadr args)))
+
+(define (print-vault-obj obj)
+  (let ((tags (vault-obj-tags obj))
+        (comment (vault-obj-comment obj))
+        (filename (vault-obj-filename obj))
+        (creation-time (vault-obj-creation-time obj))
+        (last-modified (vault-obj-modification-time obj)))
+    (printf "[~a] ~a\n"
+            (vault-obj-id obj)
+            (vault-obj-summary obj))
+    (unless (null? tags)
+      (printf "  tags: ~S\n" tags))
+    (unless (null? comment)
+      (printf "  comment: ~a\n" comment))
+    (unless (null? filename)
+      (printf "  filename: ~a\n"
+              (make-pathname (download-dir) filename)))
+    (printf "  creation time: ~a\n" creation-time)
+    (unless (equal? creation-time last-modified)
+      (printf "  last modified: ~a\n" last-modified))
+    (newline)))
+
 
 ) ;; end module

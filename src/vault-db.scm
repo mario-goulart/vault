@@ -5,10 +5,11 @@
  db-dump-objects
  db-list-tags
  db-get-vault-objects
- db-delete-object-by-id)
+ db-delete-object-by-id
+ db-search)
 
 (import chicken scheme)
-(use srfi-13)
+(use irregex srfi-1 srfi-13)
 (use matchable sql-de-lite ssql)
 (use vault-config vault-utils)
 
@@ -194,5 +195,25 @@ create table objs_tags (
       (db-query db
                 `(delete (from vault)
                          (where (in obj_id ,(list->vector ids))))))))
+
+(define (db-search regex excepts case-insensitive?)
+  (call-with-database (db-file)
+    (lambda (db)
+      ;; FIXME: implement without slurping everything into memory
+      (let ((objs (db-get-vault-objects db))
+            (re (irregex (if case-insensitive?
+                             `(w/nocase ,(string->sre regex))
+                             regex)))
+            (excs (map irregex excepts)))
+        (filter-map
+         (lambda (obj)
+           (and (or (irregex-search re (vault-obj-summary obj))
+                    (irregex-search re (vault-obj-comment obj)))
+                (not (any (lambda (ex)
+                            (or (irregex-search ex (vault-obj-summary obj))
+                                (irregex-search ex (vault-obj-comment obj))))
+                          excs))
+                obj))
+         objs)))))
 
 ) ;; end module

@@ -26,6 +26,7 @@
       ((list-tags) (cmd-list-tags))
       ((uri) (cmd-uri (cdr args)))
       ((del) (cmd-del (cdr args)))
+      ((search) (cmd-search (cdr args)))
       (else (die! "Invalid command: ~a" cmd)))))
 
 ) ;; end module
