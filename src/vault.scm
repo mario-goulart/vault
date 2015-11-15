@@ -19,6 +19,10 @@
 
   (initialize-home)
 
+  ;; Ignore SIGPIPE, otherwise with-output-to-pipe would make vault exit
+  ;; without displaying the prompt, in case user terminates the pager.
+  (set-signal-handler! signal/pipe void)
+
   (let ((cmd (string->symbol (car args))))
     (case cmd
       ((note) (cmd-note (cdr args)))
@@ -27,6 +31,7 @@
       ((uri) (cmd-uri (cdr args)))
       ((del) (cmd-del (cdr args)))
       ((search) (cmd-search (cdr args)))
+      ((edit) (cmd-edit (cdr args)))
       (else (die! "Invalid command: ~a" cmd)))))
 
 ) ;; end module

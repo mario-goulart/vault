@@ -5,11 +5,13 @@
  db-dump-objects
  db-list-tags
  db-get-vault-objects
+ db-get-vault-object-by-id
  db-delete-object-by-id
- db-search)
+ db-search
+ db-update-vault-obj)
 
 (import chicken scheme)
-(use irregex srfi-1 srfi-13)
+(use data-structures irregex srfi-1 srfi-13)
 (use matchable sql-de-lite ssql)
 (use vault-config vault-utils)
 
@@ -103,6 +105,17 @@ create table objs_tags (
                                     (where (= label ,tag)))))))))
    (map string-trim-both tags)))
 
+(define (db-unlink-object-tags db obj-id tags)
+  (for-each
+   (lambda (tag)
+     (db-query db
+       `(delete (from objs_tags)
+                (where (and (= obj_id ,obj-id)
+                            (= tag_id (select (columns tag_id)
+                                        (from tags)
+                                        (where (= label ,tag)))))))))
+   (map string-trim-both tags)))
+
 (define (db-object-exists? db summary)
   (not (null? (db-query db
                 `(select (columns summary)
@@ -176,6 +189,14 @@ create table objs_tags (
                                            tags)))))
          objs)))
 
+(define (db-get-vault-object-by-id id)
+  (call-with-database (db-file)
+    (lambda (db)
+      (let ((obj (db-get-vault-objects db where: `(= obj_id ,id))))
+        (if (null? obj)
+            '()
+            (car obj))))))
+
 (define (db-dump-objects)
   ;; Return a list of vault objects
   (call-with-database (db-file) db-get-vault-objects))
@@ -215,5 +236,28 @@ create table objs_tags (
                           excs))
                 obj))
          objs)))))
+
+(define (db-update-vault-obj id summary comment filename old-tags new-tags)
+  (define (val->string val)
+    (if (and val (not (null? val)))
+        (->string val)
+        'null))
+  (let* ((old-tags (map val->string old-tags))
+         (new-tags (map val->string new-tags))
+         (removed-tags (lset-difference equal? old-tags new-tags))
+         (added-tags (lset-difference equal? new-tags old-tags)))
+  (with-db-transaction
+    (lambda (db)
+      (db-query db
+                `(update (table vault)
+                         (set (summary ,(val->string summary))
+                              (comment ,(val->string comment))
+                              (filename ,(val->string filename))
+                              (modification_time
+                               |datetime(CURRENT_TIMESTAMP, 'localtime')|))
+                         (where (= obj_id ,id))))
+      (db-link-object-tags db id added-tags)
+      (db-unlink-object-tags db id removed-tags)
+      #t))))
 
 ) ;; end module
