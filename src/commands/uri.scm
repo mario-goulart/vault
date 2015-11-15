@@ -7,7 +7,6 @@ uri <URI> [-c <comment>] [-t <tag>] [-D] [-T]
   the `downloadable-mime-types' list (a configurable parameter), this
   command will download it and save it under #(download-dir), unless
   -D is given.  -t may be specified multiple times.
-
 EOF
 )
 

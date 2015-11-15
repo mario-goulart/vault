@@ -4,7 +4,8 @@
  db-insert-object
  db-dump-objects
  db-list-tags
- db-get-vault-objects)
+ db-get-vault-objects
+ db-delete-object-by-id)
 
 (import chicken scheme)
 (use srfi-13)
@@ -186,5 +187,12 @@ create table objs_tags (
         `(select (distinct (columns label))
                  (from tags)
                  (order (asc label)))))))
+
+(define (db-delete-object-by-id . ids)
+  (call-with-database (db-file)
+    (lambda (db)
+      (db-query db
+                `(delete (from vault)
+                         (where (in obj_id ,(list->vector ids))))))))
 
 ) ;; end module

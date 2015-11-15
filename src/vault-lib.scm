@@ -8,6 +8,7 @@
  help-dump cmd-dump
  help-list-tags cmd-list-tags
  help-uri cmd-uri
+ help-del cmd-del
  )
 
 (import chicken scheme)
@@ -19,6 +20,7 @@
 (include "commands/uri.scm")
 (include "commands/dump.scm")
 (include "commands/list-tags.scm")
+(include "commands/del.scm")
 
 ;;; Initialization
 (define (initialize-home)
@@ -51,6 +53,8 @@ Usage: #this <command> [<options>]
 #help-list-tags
 
 #help-uri
+
+#help-del
 
 EOF
              port)

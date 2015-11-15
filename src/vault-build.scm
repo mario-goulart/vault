@@ -40,7 +40,7 @@
     (vault-utils vault-config)
     (vault-db vault-config vault-utils)
     (vault-lib vault-config vault-utils vault-mime-types vault-db
-               ,(map command-dep '(dump list-tags note uri)))
+               ,(map command-dep '(del dump list-tags note uri)))
     ))
 
 (define modules (map car modules/deps))
