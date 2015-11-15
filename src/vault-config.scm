@@ -69,7 +69,8 @@
   (make-parameter 0))
 
 (define vault-editor
-  (or (get-environment-variable "VAULT_EDITOR")
-      "emacs"))
+  (make-parameter
+   (or (get-environment-variable "VAULT_EDITOR")
+       "emacs")))
 
 ) ;; end module
