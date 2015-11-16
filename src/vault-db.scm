@@ -117,38 +117,38 @@ create table objs_tags (
    (map string-trim-both tags)))
 
 (define (db-object-exists? db summary)
-  (not (null? (db-query db
-                `(select (columns summary)
-                         (from vault)
-                         (where (= summary ,summary)))))))
+  (let ((result (db-query db
+                          `(select (columns obj_id)
+                             (from vault)
+                             (where (= summary ,summary))))))
+    (if (null? result)
+        #f
+        result)))
 
 (define (db-insert-object summary comment filename tags)
-  (let* ((exists? #f)
-         (result
-          (with-db-transaction
-           (lambda (db)
-             (if (db-object-exists? db summary)
-                 (set! exists? #t)
-                 (begin
-                   (db-query db
-                     `(insert
-                       (into vault)
-                       (columns summary
-                                comment
-                                filename
-                                creation_time
-                                modification_time)
-                       (values #(,summary
-                                 ,comment
-                                 ,filename
-                                 |datetime(CURRENT_TIMESTAMP, 'localtime')|
-                                 |datetime(CURRENT_TIMESTAMP, 'localtime')|))))
-                   (let ((obj-id (last-insert-rowid db)))
-                     (db-link-object-tags db obj-id tags))))
-             #t))))
-    (if exists?
-        -1
-        result)))
+  ;; Insert an object into the database if none with the given summary exists; or does nothing if it already exists.  If the object already e
+  (with-db-transaction
+   (lambda (db)
+     (let ((maybe-obj (db-object-exists? db summary)))
+       (if maybe-obj
+           (car maybe-obj)
+           (begin
+             (db-query db
+               `(insert
+                 (into vault)
+                 (columns summary
+                          comment
+                          filename
+                          creation_time
+                          modification_time)
+                 (values #(,summary
+                           ,comment
+                           ,filename
+                           |datetime(CURRENT_TIMESTAMP, 'localtime')|
+                           |datetime(CURRENT_TIMESTAMP, 'localtime')|))))
+             (let ((obj-id (last-insert-rowid db)))
+               (db-link-object-tags db obj-id tags)
+               obj-id)))))))
 
 (define (db-object-tags db obj-id)
   (map car
