@@ -73,12 +73,14 @@ EOF
                    (debug 1 "Writing ~a to ~a" uri out-file)
                    (with-output-to-file out-file
                      (cut display data)))))
-           (db-insert-object uri
-                             (cond ((and page-title comment)
-                                    ;; FIXME: use markdown
-                                    (string-append page-title "\n\n" comment))
-                                   (else (or page-title comment "")))
-                             (if out-file
-                                 (pathname-strip-directory out-file)
-                                 'null)
-                             tags)))))))
+           (let ((obj-id
+                  (db-insert-object uri
+                                    (cond ((and page-title comment)
+                                           ;; FIXME: use markdown
+                                           (string-append page-title "\n\n" comment))
+                                          (else (or page-title comment "")))
+                                    (if out-file
+                                        (pathname-strip-directory out-file)
+                                        'null)
+                                    tags)))
+             (print-vault-obj (db-get-vault-object-by-id obj-id)))))))))
