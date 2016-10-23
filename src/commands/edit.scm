@@ -1,7 +1,6 @@
 (define help-edit
   #<#EOF
 edit [-I] [-e <except regex>] <regex> | -id <object id>
-
   Edit objects in the database.  Objects can be selected by id (-id)
   or by searching for <regex> in the database.  -I makes search
   case-sensitive.  -e can be provided multiple times and is not affected

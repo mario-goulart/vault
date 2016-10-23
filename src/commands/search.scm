@@ -3,7 +3,6 @@
 search [-I] [-e <except regex>] <regex>
   Search for <regex> in the vault database.  -I makes search case-sensitive.
   -e can be provided multiple times and is not affected by -I.
-
 EOF
 )
 
