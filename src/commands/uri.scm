@@ -90,5 +90,5 @@ EOF
                         (list (pathname-strip-directory out-file))
                         '()))
              (obj-id
-              (db-insert-object summary (or comment "") tags files uris)))
+              (db-insert-object summary (or comment 'null) tags files uris)))
         (print-vault-obj (db-get-vault-object-by-id obj-id)))))
