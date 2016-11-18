@@ -1,7 +1,7 @@
 (define help-del
   #<#EOF
-del
-  Remove vault objects by id.
+del <id>
+  Remove vault objects by id.  Multiple <id>s may be provided.
 EOF
 )
 
