@@ -195,14 +195,18 @@ create table objs_tags (
             (excs (map irregex excepts)))
         (filter-map
          (lambda (obj)
-           (and (or (irregex-search re (vault-obj-summary obj))
-                    (irregex-search re (vault-obj-comment obj)))
-                (not (any (lambda (ex)
-                            (or (irregex-search ex (vault-obj-summary obj))
-                                (irregex-search ex (vault-obj-comment obj))))
-                          excs))
-                obj))
-         objs)))))
+           (let* ((summary% (vault-obj-summary obj))
+                  (summary (if (null? summary%) #f summary%))
+                  (comment% (vault-obj-comment obj))
+                  (comment (if (null? comment%) #f comment%)))
+             (and (or (and summary (irregex-search re summary))
+                      (and comment (irregex-search re comment)))
+                  (not (any (lambda (ex)
+                              (or (and summary (irregex-search ex summary))
+                                  (and comment (irregex-search ex comment))))
+                            excs))
+                  obj)))
+           objs)))))
 
 (define (db-update-vault-obj obj-id summary comment
                              old-tags new-tags
