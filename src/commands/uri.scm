@@ -71,7 +71,7 @@ EOF
                                (and (memq content-type (web-page-mime-types))
                                     (begin
                                       (debug 1 "Reading ~a..." primary-uri)
-                                      (parse-title (read-string 2048 port)))))
+                                      (parse-title (read-string 10240 port)))))
                               (else #f))))
              (when data
                (if (and use-page-title?
