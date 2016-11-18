@@ -8,19 +8,21 @@
   id
   summary
   comment
-  filename
   creation-time
   modification-time
-  tags)
+  tags
+  files
+  uris)
 
 (define-record-printer (vault-obj obj out)
-  (fprintf out "#<vault-obj id=~a summary=~a filename=~a creation_time=~a modification_time=~a tags=~a comment=~a>"
+  (fprintf out "#<vault-obj id=~a summary=~a creation_time=~a modification_time=~a tags=~s files=~S uris=~S comment=~a>"
            (vault-obj-id obj)
            (vault-obj-summary obj)
-           (vault-obj-filename obj)
            (vault-obj-creation-time obj)
            (vault-obj-modification-time obj)
            (vault-obj-tags obj)
+           (vault-obj-files obj)
+           (vault-obj-uris obj)
            (vault-obj-comment obj)))
 
 ;;; Messages

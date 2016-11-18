@@ -19,6 +19,8 @@
 
   (initialize-home)
 
+  (maybe-migrate-db!)
+
   ;; Ignore SIGPIPE, otherwise with-output-to-pipe would make vault exit
   ;; without displaying the prompt, in case user terminates the pager.
   (set-signal-handler! signal/pipe void)

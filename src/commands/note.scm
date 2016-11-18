@@ -23,4 +23,4 @@ EOF
                  (set! tags (cons (parse-tag-option args) tags))
                  (loop (cddr args)))
                 (else (die! "note: invalid syntax"))))))
-    (db-insert-object summary (or comment 'null) 'null tags)))
+    (db-insert-object summary (or comment 'null) tags '() '())))

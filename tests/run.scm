@@ -64,7 +64,7 @@
 (test-group
  "download uri (html)"
  (test "Checking uri data"
-       '("http://parenteses.org/mario" "Mario Domenech Goulart" ("mario"))
+       '("Mario Domenech Goulart" ("mario") ("http://parenteses.org/mario"))
        (begin
          (run-vault "uri http://parenteses.org/mario -t mario")
          (let ((objs (db-get-vault-objects db where: `(= obj_id 3))))
@@ -72,20 +72,20 @@
            (assert (null? (cdr objs)))
           (let ((obj (car objs)))
             (list (vault-obj-summary obj)
-                  (vault-obj-comment obj)
-                  (vault-obj-tags obj)))))))
+                  (vault-obj-tags obj)
+                  (vault-obj-uris obj)))))))
 
 (test-group
  "download uri (png)"
  (test "Checking uri data"
-       '("http://parenteses.org/mario/misc/fail.png" "fail" ("mario"))
+       '(("http://parenteses.org/mario/misc/fail.png") "fail" ("mario"))
        (begin
          (run-vault "uri http://parenteses.org/mario/misc/fail.png -c fail -t mario")
          (let ((objs (db-get-vault-objects db where: `(= obj_id 4))))
            (assert (not (null? objs)))
            (assert (null? (cdr objs)))
           (let ((obj (car objs)))
-            (list (vault-obj-summary obj)
+            (list (vault-obj-uris obj)
                   (vault-obj-comment obj)
                   (vault-obj-tags obj))))))
  (test-assert "Checking the downloaded file (png)"

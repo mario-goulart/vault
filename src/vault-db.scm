@@ -1,6 +1,7 @@
 (module vault-db
 
 (initialize-database
+ maybe-migrate-db!
  db-insert-object
  db-dump-objects
  db-list-tags
@@ -11,14 +12,14 @@
  db-update-vault-obj)
 
 (import chicken scheme)
-(use data-structures irregex srfi-1 srfi-13)
+(use data-structures extras files irregex posix srfi-1 srfi-13)
 (use matchable sql-de-lite ssql)
 (use vault-config vault-utils)
 
-;; (define (db-query db-conn q #!key (values '()))
-;;   (apply query (append (list (map-rows (lambda (data) data))
-;;                              (sql db-conn q))
-;;                        values)))
+(define (db-query/str db-conn q #!key (values '()))
+  (apply query (append (list (map-rows (lambda (data) data))
+                             (sql db-conn q))
+                       values)))
 
 (define (db-query db-conn q)
   (apply query (list (map-rows (lambda (data) data))
@@ -50,14 +51,14 @@ create table vault (
   modification_time text
 )"))
 
-    ;; Tags table
+    ;; Tags table (DEPRECATED)
     (exec (sql db "
 create table tags (
     tag_id integer primary key autoincrement,
     label text
 )"))
 
-    ;; Objs & tags
+    ;; Objs & tags (DEPRECATED)
     (exec (sql db "
 create table objs_tags (
     obj_id integer,
@@ -71,100 +72,60 @@ create table objs_tags (
     (exec (sql db "insert into version (version) values (1)"))
     (close-database db)))
 
-(define (db-tag-exists? db label)
-  (not (null? (db-query db
-                `(select (columns tag_id)
-                         (from tags)
-                         (where (= label ,label)))))))
 
-(define (db-insert-tag db label)
-  (unless (db-tag-exists? db label)
-    (db-query db
-      `(insert (into tags) (columns label) (values #(,label))))))
+(define (db-insert-obj-attr! db obj-id attr-type vals)
+  (for-each (lambda (val)
+              (db-query db `(insert (into objs_attrs)
+                                    (columns obj_id type value)
+                                    (values #(,obj-id ,attr-type ,val)))))
+            vals))
 
-(define (db-object-linked-to-tag? db obj-id tag)
-  (not (null?
-        (db-query db
-          `(select (columns objs_tags.obj_id objs_tags.tag_id)
-                   (from objs_tags tags)
-                   (where (and (= objs_tags.obj_id ,obj-id)
-                               (= tags.label ,tag)
-                               (= objs_tags.tag_id tags.tag_id))))))))
+(define (db-remove-obj-attr! db obj-id attr-type vals)
+  (db-query db `(delete (from objs_attrs)
+                        (where (and (= obj_id ,obj-id)
+                                    (= type ,attr-type)
+                                    (in value ,(list->vector vals)))))))
 
-(define (db-link-object-tags db obj-id tags)
-  (for-each
-   (lambda (tag)
-     (db-insert-tag db tag)
-     (unless (db-object-linked-to-tag? db obj-id tag)
-       (db-query db
-         `(insert (into objs_tags)
-                  (columns obj_id tag_id)
-                  (values #(,obj-id
-                            (select (columns tag_id)
-                                    (from tags)
-                                    (where (= label ,tag)))))))))
-   (map string-trim-both tags)))
+(define (db-get-obj-attr db obj-id attr-type)
+  (filter-map
+   (lambda (item)
+     (if (null? item)
+         #f
+         (car item)))
+   (db-query db `(select (columns value)
+                         (from objs_attrs)
+                         (where (and (= obj_id ,obj-id)
+                                     (= type ,attr-type)))
+                         (order (asc value))))))
 
-(define (db-unlink-object-tags db obj-id tags)
-  (for-each
-   (lambda (tag)
-     (db-query db
-       `(delete (from objs_tags)
-                (where (and (= obj_id ,obj-id)
-                            (= tag_id (select (columns tag_id)
-                                        (from tags)
-                                        (where (= label ,tag)))))))))
-   (map string-trim-both tags)))
-
-(define (db-object-exists? db summary)
-  (let ((result (db-query db
-                          `(select (columns obj_id)
-                             (from vault)
-                             (where (= summary ,summary))))))
-    (if (null? result)
-        #f
-        result)))
-
-(define (db-insert-object summary comment filename tags)
-  ;; Insert an object into the database if none with the given summary exists; or does nothing if it already exists.  If the object already e
+(define (db-insert-object summary comment tags files uris)
+  ;; Insert an object into the database if none with the given summary
+  ;; exists; or does nothing if it already exists.  If the object
+  ;; already e
   (with-db-transaction
    (lambda (db)
-     (let ((maybe-obj (db-object-exists? db summary)))
-       (if maybe-obj
-           (car maybe-obj)
-           (begin
-             (db-query db
+     (db-query db
                `(insert
                  (into vault)
                  (columns summary
                           comment
-                          filename
                           creation_time
                           modification_time)
                  (values #(,summary
                            ,comment
-                           ,filename
                            |datetime(CURRENT_TIMESTAMP, 'localtime')|
                            |datetime(CURRENT_TIMESTAMP, 'localtime')|))))
-             (let ((obj-id (last-insert-rowid db)))
-               (db-link-object-tags db obj-id tags)
-               obj-id)))))))
-
-(define (db-object-tags db obj-id)
-  (map car
-       (db-query db
-         `(select (columns tags.label)
-                  (from tags objs_tags)
-                  (where (and (= objs_tags.obj_id ,obj-id)
-                              (= tags.tag_id objs_tags.tag_id)))
-                  (order (asc label))))))
+     (let ((obj-id (last-insert-rowid db)))
+       (db-insert-obj-attr! db obj-id "tag" tags)
+       (db-insert-obj-attr! db obj-id "file" files)
+       (db-insert-obj-attr! db obj-id "uri" uris)
+       obj-id))))
 
 (define (db-get-vault-objects db #!key where)
   (let ((objs (db-query db
                 `(select (columns obj_id
                                   summary
                                   comment
-                                  filename
                                   creation_time
                                   modification_time)
                          (from vault)
@@ -175,18 +136,20 @@ create table objs_tags (
            (match-let (((obj-id
                          summary
                          comment
-                         filename
                          creation_time
                          modification_time)
                         obj))
-             (let ((tags (db-object-tags db obj-id)))
+             (let ((tags (db-get-obj-attr db obj-id "tag"))
+                   (files (db-get-obj-attr db obj-id "file"))
+                   (uris (db-get-obj-attr db obj-id "uri")))
                (apply make-vault-obj (list obj-id
                                            summary
                                            comment
-                                           filename
                                            creation_time
                                            modification_time
-                                           tags)))))
+                                           tags
+                                           files
+                                           uris)))))
          objs)))
 
 (define (db-get-vault-object-by-id id)
@@ -206,16 +169,20 @@ create table objs_tags (
   (call-with-database (db-file)
     (lambda (db)
       (db-query db
-        `(select (distinct (columns label))
-                 (from tags)
-                 (order (asc label)))))))
+        `(select (distinct (columns value))
+                 (from objs_attrs)
+                 (where (= type "tag"))
+                 (order (asc value)))))))
 
 (define (db-delete-object-by-id . ids)
-  (call-with-database (db-file)
-    (lambda (db)
-      (db-query db
-                `(delete (from vault)
-                         (where (in obj_id ,(list->vector ids))))))))
+  (with-db-transaction
+   (lambda (db)
+     (db-query db
+       `(delete (from objs_attrs)
+                (where (in obj_id ,(list->vector ids)))))
+     (db-query db
+       `(delete (from vault)
+                (where (in obj_id ,(list->vector ids))))))))
 
 (define (db-search regex excepts case-insensitive?)
   (call-with-database (db-file)
@@ -237,27 +204,173 @@ create table objs_tags (
                 obj))
          objs)))))
 
-(define (db-update-vault-obj id summary comment filename old-tags new-tags)
+(define (db-update-vault-obj obj-id summary comment
+                             old-tags new-tags
+                             old-files new-files
+                             old-uris new-uris)
   (define (val->string val)
     (if (and val (not (null? val)))
         (->string val)
         'null))
-  (let* ((old-tags (map val->string old-tags))
-         (new-tags (map val->string new-tags))
-         (removed-tags (lset-difference equal? old-tags new-tags))
-         (added-tags (lset-difference equal? new-tags old-tags)))
-  (with-db-transaction
+
+  (define (get-removed/added old new)
+    (let ((old (map val->string old))
+          (new (map val->string new)))
+      (list (lset-difference equal? old new)
+            (lset-difference equal? new old))))
+
+  (match-let (((removed-tags added-tags) (get-removed/added old-tags new-tags))
+              ((removed-files added-files) (get-removed/added old-files new-files))
+              ((removed-uris added-uris) (get-removed/added old-uris new-uris)))
+    (with-db-transaction
+     (lambda (db)
+       (db-query db
+                 `(update (table vault)
+                          (set (summary ,(val->string summary))
+                               (comment ,(val->string comment))
+                               (modification_time
+                                |datetime(CURRENT_TIMESTAMP, 'localtime')|))
+                          (where (= obj_id ,obj-id))))
+       (db-remove-obj-attr! db obj-id "tag" removed-tags)
+       (db-insert-obj-attr! db obj-id "tag" added-tags)
+       (db-remove-obj-attr! db obj-id "file" removed-files)
+       (db-insert-obj-attr! db obj-id "file" added-files)
+       (db-remove-obj-attr! db obj-id "uri" removed-uris)
+       (db-insert-obj-attr! db obj-id "uri" added-uris)
+       #t))))
+
+
+;;;
+;;; Migration support
+;;;
+
+(define *db-migrations* '())
+
+(define (add-migration! next-version migration-proc)
+  (let ((migration
+         (lambda ()
+           (call-with-database (db-file)
+             (lambda (db)
+               (with-transaction db
+                 (lambda ()
+                   (migration-proc db)
+                   (db-query db '(delete (from version)))
+                   (db-query db `(insert (into version)
+                                         (columns version)
+                                         (values #(,next-version))))
+                   #t)))))))
+    (set! *db-migrations* (cons migration *db-migrations*))))
+
+(define (current-db-version)
+  (call-with-database (db-file)
     (lambda (db)
-      (db-query db
-                `(update (table vault)
-                         (set (summary ,(val->string summary))
-                              (comment ,(val->string comment))
-                              (filename ,(val->string filename))
-                              (modification_time
-                               |datetime(CURRENT_TIMESTAMP, 'localtime')|))
-                         (where (= obj_id ,id))))
-      (db-link-object-tags db id added-tags)
-      (db-unlink-object-tags db id removed-tags)
-      #t))))
+      (caar (db-query db '(select (columns version) (from version)))))))
+
+(define (maybe-migrate-db!)
+  (let ((version (current-db-version))
+        (total-migrations (length *db-migrations*)))
+    (debug 1 "Current DB schema version is ~S" version)
+    (assert (<= version total-migrations))
+    (let ((migrations (drop (reverse *db-migrations*) version)))
+      (for-each
+       (lambda (migration version)
+         (let ((next-version (+ version 1)))
+           (debug 1 "Backing up the database before running the migration")
+           (let* ((db-dir (pathname-directory (db-file)))
+                  (db-filename (pathname-strip-directory (db-file)))
+                  (old-dbs-dir (make-pathname db-dir "old-dbs")))
+             (create-directory old-dbs-dir)
+             (file-copy (db-file)
+                        (make-pathname old-dbs-dir
+                                       (sprintf "~a.~a-~a"
+                                                db-filename
+                                                (- next-version 1)
+                                                next-version))
+                        'clobber))
+           (info "Running migration from version ~a to ~a..." version next-version)
+           (handle-exceptions exn
+             (begin
+               (print-call-chain (current-error-port))
+               (print-error-message exn (current-error-port))
+               (problem "Error running migration from version ~a to ~a" version next-version)
+               (exit 1))
+             (migration))
+           (info "Successfully migrated from version ~a to ~a" version next-version)))
+       migrations
+       (iota (- total-migrations version) version)))))
+
+;;;
+;;; Migrations
+;;;
+
+;;; IMPORTANT: migrations must be added in the order they are to be
+;;; applied!
+
+;; version 0 -> 1
+(add-migration! 1 void) ;; The initial version was 1
+
+;; version 1 -> 2
+(add-migration!
+ 2
+ (lambda (db)
+   ;; type can be: 'uri', 'file' or 'tag'
+   (db-query/str db "
+create table objs_attrs (
+    obj_id integer,
+    type text,
+    value text,
+    foreign key(obj_id) references vault(obj_id)
+)")
+   (for-each
+    (lambda (obj-id)
+      (let* ((tags
+              (map car
+                   (db-query db
+                    `(select (columns tags.label)
+                             (from tags objs_tags)
+                             (where (and (= objs_tags.obj_id ,obj-id)
+                                         (= tags.tag_id objs_tags.tag_id)))))))
+             (summary/comment/file
+              (car (db-query db
+                             `(select (columns summary comment filename)
+                                      (from vault)
+                                      (where (= obj_id ,obj-id))))))
+             (summary (car summary/comment/file))
+             (comment (cadr summary/comment/file))
+             (file (caddr summary/comment/file)))
+        ;; Insert file
+        (when (and file (not (null? file)))
+          (db-query db `(insert (into objs_attrs)
+                                (columns obj_id type value)
+                                (values #(,obj-id "file" ,file)))))
+        ;; Check if summary is an URI.  If it is, insert it as an URI.
+        (when (or (string-prefix-ci? "http://" summary)
+                  (string-prefix-ci? "https://" summary)
+                  (string-prefix-ci? "ftp://" summary)
+                  (string-prefix-ci? "gopher://" summary))
+          (db-query db `(insert (into objs_attrs)
+                                (columns obj_id type value)
+                                (values #(,obj-id "uri" ,summary))))
+          (let ((comment-is-summary?
+                 (not (string-contains comment "\n"))))
+            ;(debug 1 "comment-is-summary? ~S, comment: ~S" comment-is-summary? comment)
+            (db-query db `(update (table vault)
+                                  (set (summary ,(if comment-is-summary?
+                                                     comment
+                                                     'null))
+                                       (comment ,(if comment-is-summary?
+                                                     'null
+                                                     comment)))
+                                  (where (= obj_id ,obj-id))))))
+        ;; Insert tags
+        (for-each (lambda (tag)
+                    (db-query db `(insert (into objs_attrs)
+                                          (columns obj_id type value)
+                                          (values #(,obj-id "tag" ,tag)))))
+                  tags)))
+    (map car (db-query db `(select (columns obj_id) (from vault)))))
+
+   (db-query/str db "drop table objs_tags")
+   (db-query/str db "drop table tags")))
 
 ) ;; end module
