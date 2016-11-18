@@ -1,12 +1,12 @@
 (define help-uri
   #<#EOF
-uri <URI> [-c <comment>] [-t <tag>] [-u <extra uri>] [-D] [-T]
-  Add <URI>.  If <URI> is an HTML page and -T is not provided, this
-  command will automatically prepend the HTML page title to
+uri <URI> [-c <comment>] [-t <tag>] [-u <extra uri>] [-D] [-T] [-s <summary>]
+  Add <URI>.  If <URI> is an HTML page and -T or -s are not provided,
+  this command will automatically prepend the HTML page title to
   <comment> (-T disables this behavior).  If <URI>'s content type is in
   the `downloadable-mime-types' list (a configurable parameter), this
-  command will download it and save it under #(download-dir), unless
-  -D is given.  -u and -t may be specified multiple times.
+  command will download it and save it under #(download-dir), unless -D
+  is given.  -u and -t may be specified multiple times.
 EOF
 )
 
@@ -18,9 +18,9 @@ EOF
                            '(("\n" . "")))
       html-strip)))
 
-(define (parse-extra-uri-option args)
+(define (parse-extra-option args option)
   (if (null? (cdr args))
-      (die! "-u requires an argument.")
+      (die! "~a requires an argument." option)
       (cadr args)))
 
 (define (cmd-uri args)
@@ -32,6 +32,7 @@ EOF
         (page-title #f)
         (download? #t)
         (out-file #f)
+        (user-summary #f)
         (use-page-title? #t))
     (let loop ((args (cdr args)))
       (unless (null? args)
@@ -43,7 +44,11 @@ EOF
                  (set! tags (cons (parse-tag-option args) tags))
                  (loop (cddr args)))
                 ((string=? arg "-u")
-                 (set! uris (cons (parse-extra-uri-option args) uris))
+                 (set! uris (cons (parse-extra-option args "-u") uris))
+                 (loop (cddr args)))
+                ((string=? arg "-s")
+                 (set! use-page-title? #f)
+                 (set! user-summary (parse-extra-option args "-s"))
                  (loop (cddr args)))
                 ((string=? arg "-D")
                  (set! download? #f)
@@ -85,7 +90,7 @@ EOF
                      (debug 1 "Writing ~a to ~a" primary-uri out-file)
                      (with-output-to-file out-file
                        (cut display data))))))))))
-      (let* ((summary (or page-title ""))
+      (let* ((summary (or user-summary page-title 'null))
              (files (if out-file
                         (list (pathname-strip-directory out-file))
                         '()))
