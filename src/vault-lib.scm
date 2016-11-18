@@ -119,7 +119,8 @@ EOF
   (print (format-vault-obj obj)))
 
 (define (vault-obj->alist obj)
-  `((summary . ,(vault-obj-summary obj))
+  `((id . ,(vault-obj-id obj))
+    (summary . ,(vault-obj-summary obj))
     (comment . ,(vault-obj-comment obj))
     (tags . ,(vault-obj-tags obj))
     (files . ,(vault-obj-files obj))
