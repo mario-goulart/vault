@@ -86,16 +86,18 @@ EOF
   (let ((tags (vault-obj-tags obj))
         (files (vault-obj-files obj))
         (uris (vault-obj-uris obj))
+        (summary (vault-obj-summary obj))
         (comment (vault-obj-comment obj))
         (creation-time (vault-obj-creation-time obj))
         (last-modified (vault-obj-modification-time obj)))
     (with-output-to-string
       (lambda ()
         (if no-id
-            (print (vault-obj-summary obj))
+            (unless (null? summary)
+              (print summary))
             (printf "[~a] ~a\n"
                     (vault-obj-id obj)
-                    (vault-obj-summary obj)))
+                    (if (null? summary) "" summary)))
         (unless (null? tags)
           (printf "  tags: ~S\n" tags))
         (unless (null? uris)
