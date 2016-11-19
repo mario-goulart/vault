@@ -70,16 +70,12 @@ EOF
       (exit exit-code))))
 
 ;;; utils
-(define (parse-comment-option args comment-exists?)
-  (when comment-exists?
-    (die! "-c cannot be provided multiple times"))
+;;; Command line parsing
+(define (parse-option/arg args option #!optional check-multiple)
+  (when check-multiple
+    (die! "~a cannot be provided multiple times." option))
   (if (null? (cdr args))
-      (die! "-c requires an argument.")
-      (cadr args)))
-
-(define (parse-tag-option args)
-  (if (null? (cdr args))
-      (die! "-t requires an argument.")
+      (die! "~a requires an argument." option)
       (cadr args)))
 
 (define (format-vault-obj obj #!key no-id)
