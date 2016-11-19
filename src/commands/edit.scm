@@ -23,7 +23,7 @@ EOF
     (with-output-to-file tmp-file
       (lambda ()
         (print ";; -*- scheme -*-")
-        (pp (vault-obj->alist obj))))
+        (pp (alist-delete 'id (vault-obj->alist obj)))))
     (let ((data
            (let loop ()
              (edit-file tmp-file)
