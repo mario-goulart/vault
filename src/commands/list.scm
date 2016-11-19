@@ -1,11 +1,11 @@
-(define help-dump
+(define help-list
   #<#EOF
-dump [-s]
-  Dump the database content.  If -s is provided, dump in sexp format.
+list [-s]
+  List the database content.  If -s is provided, list in sexp format.
 EOF
 )
 
-(define (cmd-dump args)
+(define (cmd-list args)
   (let ((sexp-format? (and (not (null? args))
                            (string=? (car args) "-s"))))
     (with-output-to-pager

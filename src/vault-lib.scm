@@ -5,7 +5,7 @@
 
  usage
  help-note cmd-note
- help-dump cmd-dump
+ help-list cmd-list
  help-list-tags cmd-list-tags
  help-uri cmd-uri
  help-del cmd-del
@@ -20,7 +20,7 @@
 
 (include "commands/note.scm")
 (include "commands/uri.scm")
-(include "commands/dump.scm")
+(include "commands/list.scm")
 (include "commands/list-tags.scm")
 (include "commands/del.scm")
 (include "commands/search.scm")
@@ -52,7 +52,7 @@ Usage: #this <command> [<options>]
 
 #help-note
 
-#help-dump
+#help-list
 
 #help-list-tags
 

@@ -28,7 +28,7 @@
   (let ((cmd (string->symbol (car args))))
     (case cmd
       ((note) (cmd-note (cdr args)))
-      ((dump) (cmd-dump (cdr args)))
+      ((list) (cmd-list (cdr args)))
       ((list-tags) (cmd-list-tags))
       ((uri) (cmd-uri (cdr args)))
       ((del) (cmd-del (cdr args)))
