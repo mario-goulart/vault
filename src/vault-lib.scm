@@ -108,10 +108,10 @@ EOF
                     files))
         (unless (null? comment)
           (printf "  comment: ~a\n" comment))
-        (printf "  creation time: ~a\n" creation-time)
+        (printf "  creation time: ~a" creation-time)
         (unless (equal? creation-time last-modified)
-          (printf "  last modified: ~a\n" last-modified))
-        (newline)))))
+          (newline)
+          (printf "  last modified: ~a" last-modified))))))
 
 (define (print-vault-obj obj)
   (print (format-vault-obj obj)))

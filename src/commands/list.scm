@@ -38,9 +38,13 @@ EOF
                                     (db-dump-objects))))))
       (with-output-to-pager
        (lambda ()
-         (for-each
-          (lambda (obj)
-            (if sexp-format?
-                (pp (vault-obj->alist obj))
-                (print-vault-obj obj)))
-          objs))))))
+         (let loop ((objs objs))
+           (unless (null? objs)
+             (let ((obj (car objs)))
+               (if sexp-format?
+                   (pp (vault-obj->alist obj))
+                   (begin
+                     (print-vault-obj obj)
+                     (unless (null? (cdr objs))
+                       (newline)))))
+             (loop (cdr objs)))))))))
