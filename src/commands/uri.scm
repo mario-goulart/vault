@@ -61,35 +61,40 @@ EOF
     (set! uris (reverse uris))
     (let ((primary-uri (car uris)))
       (when (or use-page-title? download?)
-        (call-with-input-request*
-         (make-request uri: (uri-reference primary-uri))
-         #f
-         (lambda (port response)
-           (let* ((headers (response-headers response))
-                  (content-type (header-value 'content-type headers 'unknown))
-                  (data (cond ((and download?
-                                    (memq content-type
-                                          (downloadable-mime-types)))
-                               (debug 1 "Downloading ~a..." primary-uri)
-                               (read-string #f port))
-                              (use-page-title?
-                               (and (memq content-type (web-page-mime-types))
-                                    (begin
-                                      (debug 1 "Reading ~a..." primary-uri)
-                                      (parse-title (read-string 10240 port)))))
-                              (else #f))))
-             (when data
-               (if (and use-page-title?
-                        (memq content-type (web-page-mime-types)))
-                   (set! page-title data)
-                   (begin
-                     (set! out-file
-                           (make-pathname (download-dir)
-                                          (string->sha1sum data)
-                                          (mime-type->extension content-type)))
-                     (debug 1 "Writing ~a to ~a" primary-uri out-file)
-                     (with-output-to-file out-file
-                       (cut display data))))))))))
+        (handle-exceptions exn
+          (begin
+            (warn "Could not download ~a." primary-uri)
+            (print-error-message exn))
+          (call-with-input-request*
+           (make-request uri: (uri-reference primary-uri))
+           #f
+           (lambda (port response)
+             (let* ((headers (response-headers response))
+                    (content-type (header-value 'content-type headers 'unknown))
+                    (data (cond ((and download?
+                                      (memq content-type
+                                            (downloadable-mime-types)))
+                                 (debug 1 "Downloading ~a..." primary-uri)
+                                 (read-string #f port))
+                                (use-page-title?
+                                 (and (memq content-type (web-page-mime-types))
+                                      (begin
+                                        (debug 1 "Reading ~a..." primary-uri)
+                                        (parse-title
+                                         (read-string 10240 port)))))
+                                (else #f))))
+               (when data
+                 (if (and use-page-title?
+                          (memq content-type (web-page-mime-types)))
+                     (set! page-title data)
+                     (begin
+                       (set! out-file
+                         (make-pathname (download-dir)
+                                        (string->sha1sum data)
+                                        (mime-type->extension content-type)))
+                       (debug 1 "Writing ~a to ~a" primary-uri out-file)
+                       (with-output-to-file out-file
+                         (cut display data)))))))))))
       (let* ((summary (or user-summary page-title 'null))
              (files (if out-file
                         (list (pathname-strip-directory out-file))
