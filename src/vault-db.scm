@@ -9,7 +9,8 @@
  db-get-vault-object-by-id
  db-delete-object-by-id
  db-search
- db-update-vault-obj)
+ db-update-vault-obj
+ db-get-obj-ids-linked-to-file)
 
 (import chicken scheme)
 (use data-structures extras files irregex posix srfi-1 srfi-13)
@@ -243,6 +244,15 @@ create table objs_tags (
        (db-insert-obj-attr! db obj-id "uri" added-uris)
        #t))))
 
+(define (db-get-obj-ids-linked-to-file file)
+  ;; Note: file doesn't contain (download-dir) as prefix
+  (call-with-database (db-file)
+    (lambda (db)
+      (map car
+           (db-query db `(select (columns obj_id)
+                                 (from objs_attrs)
+                                 (where (and (= type "file")
+                                             (= value ,file)))))))))
 
 ;;;
 ;;; Migration support
