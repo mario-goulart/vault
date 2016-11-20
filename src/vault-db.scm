@@ -157,7 +157,7 @@ create table objs_tags (
     (lambda (db)
       (let ((obj (db-get-vault-objects db where: `(= obj_id ,id))))
         (if (null? obj)
-            '()
+            #f
             (car obj))))))
 
 (define (db-dump-objects)

@@ -91,6 +91,6 @@ EOF
                      (obj (list-ref results choice)))
                 (edit-data obj))))
         (let ((obj (db-get-vault-object-by-id id)))
-          (if (null? obj)
-              (die! "No such vault object: ~a" id)
-              (edit-data obj))))))
+          (if obj
+              (edit-data obj)
+              (die! "No such vault object: ~a" id))))))
