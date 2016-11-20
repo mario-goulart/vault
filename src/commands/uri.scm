@@ -22,6 +22,44 @@ EOF
           (string-trim-both title)
         html-strip))))
 
+(define (pad-number n zeroes)
+  (define (pad num len)
+    (let ((str (if (string? num) num (number->string num))))
+      (if (string-null? str)
+          ""
+          (if (>= (string-length str) len)
+              str
+              (string-pad str len #\0)))))
+  (let ((len (string-length (->string n))))
+    (if (= len zeroes)
+        (number->string n)
+        (pad n zeroes))))
+
+(define (path-separator? char)
+  (or (char=? char #\/)
+      (and (eqv? (software-type) 'windows)
+           (char=? char #\\))))
+
+(define (pathname-strip-download-dir path)
+  (let ((path (normalize-pathname path))
+        (ddir (normalize-pathname (download-dir))))
+    (if (string-prefix? ddir path)
+        (let ((relpath (substring path (string-length ddir))))
+          (let loop ((relpath relpath))
+            (if (string-null? relpath)
+                ""
+                (if (path-separator? (string-ref relpath 0))
+                    (loop (substring relpath 1))
+                    relpath))))
+        path)))
+
+(define (today-dir)
+  (let* ((now (seconds->local-time))
+         (day (pad-number (vector-ref now 3) 2))
+         (month (pad-number (add1 (vector-ref now 4)) 2))
+         (year (number->string (+ 1900 (vector-ref now 5)))))
+    (make-pathname (list year month) day)))
+
 (define (cmd-uri args)
   (when (null? args)
     (usage 1))
@@ -86,17 +124,18 @@ EOF
                  (if (and use-page-title?
                           (memq content-type (web-page-mime-types)))
                      (set! page-title data)
-                     (begin
+                     (let ((out-dir (make-pathname (download-dir) (today-dir))))
                        (set! out-file
-                         (make-pathname (download-dir)
+                         (make-pathname out-dir
                                         (string->sha1sum data)
                                         (mime-type->extension content-type)))
+                       (create-directory out-dir 'recursively)
                        (debug 1 "Writing ~a to ~a" primary-uri out-file)
                        (with-output-to-file out-file
                          (cut display data)))))))))))
       (let* ((summary (or user-summary page-title 'null))
              (files (if out-file
-                        (list (pathname-strip-directory out-file))
+                        (list (pathname-strip-download-dir out-file))
                         '()))
              (obj-id
               (db-insert-object summary (or comment 'null) tags files uris)))
