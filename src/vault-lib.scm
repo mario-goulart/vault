@@ -14,7 +14,7 @@
  )
 
 (import chicken scheme)
-(use data-structures extras irregex files posix ports srfi-1 utils)
+(use data-structures extras irregex files posix ports srfi-1 srfi-13 utils)
 (use html-parser http-client intarweb simple-sha1 uri-common)
 (use vault-config vault-utils vault-mime-types vault-db)
 

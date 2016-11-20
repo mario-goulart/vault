@@ -11,12 +11,16 @@ EOF
 )
 
 (define (parse-title data)
-  (and-let* ((m (irregex-search "<title>([^>]+)</title>" data))
+  (and-let* ((m (irregex-search "<title[^>]*>(.*)</title>"
+                                (string-translate* data '(("\n" . "")))))
              ((irregex-match-valid-index? m 1)))
-    (with-input-from-string
-        (string-translate* (irregex-match-substring m 1)
-                           '(("\n" . "")))
-      html-strip)))
+    (let ((title (irregex-match-substring m 1)))
+      ;; Handle multiple <title> tags
+      (and-let* ((i (substring-index "</title>" title)))
+        (set! title (string-take title i)))
+      (with-input-from-string
+          (string-trim-both title)
+        html-strip))))
 
 (define (cmd-uri args)
   (when (null? args)
