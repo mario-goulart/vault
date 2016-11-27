@@ -38,9 +38,10 @@ EOF
                             (if (null? list-tags)
                                 (db-dump-objects)
                                 (filter (lambda (obj)
-                                          (any (lambda (tag)
-                                                 (member tag list-tags))
-                                               (vault-obj-tags obj)))
+                                          (let ((all-tags (vault-obj-tags obj)))
+                                            (every (lambda (tag)
+                                                     (member tag all-tags))
+                                                   list-tags)))
                                         (db-dump-objects))))
                     (filter-map db-get-vault-object-by-id
                                 (sort (filter-map string->number ids) <)))))
