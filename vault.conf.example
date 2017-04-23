@@ -1,0 +1,18 @@
+;; -*- scheme -*-
+(use vault-config)
+(use (only http-client client-software))
+
+;; Some servers (e.g., medium.com) give vault a 403 error, probably
+;; because of http-client's user agent.  To work around that, we have
+;; to fake the user agent:
+(client-software
+ '#((("Mozilla" "5.0" "X11; Linux x86_64; rv:45.0")
+    ("Gecko" "20100101" #f)
+    ("Firefox" "45.0" #f))
+   ()))
+
+;; In case yo want to set the debug level:
+; (debug-level 2)
+
+;; Use emacs as editor (for "vault edit")
+(vault-editor "emacs -Q -nw")
