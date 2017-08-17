@@ -1,6 +1,6 @@
 (use files extras posix setup-api)
 (use sql-de-lite test)
-(use vault-config vault-utils vault-db)
+(use vault-config vault-utils vault-db vault-lib)
 
 (define vault
   (make-pathname
@@ -90,7 +90,7 @@
                   (vault-obj-tags obj))))))
  (test-assert "Checking the downloaded file (png)"
               (file-exists?
-               (make-pathname (download-dir)
+               (make-pathname (list (download-dir) (today-dir))
                               "1f1b025eeec7ccaee81ccef47be092c68bfb2975.png"))))
 
 (test "Checking tags so far"

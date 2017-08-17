@@ -11,6 +11,9 @@
  help-del cmd-del
  help-search cmd-search
  help-edit cmd-edit
+
+ ;; for tests
+ today-dir
  )
 
 (import chicken scheme)
