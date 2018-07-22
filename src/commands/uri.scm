@@ -48,6 +48,30 @@
          (year (number->string (+ 1900 (vector-ref now 5)))))
     (make-pathname (list year month) day)))
 
+(define (save-file content content-is-path? #!optional content-type uri)
+  ;; Save `content' into the download directory, under a directory
+  ;; named after today's date and using the SHA1 sum of `content'.  If
+  ;; `content' is a path to a local file, just copy the file,
+  ;; otherwise dump it to the output file.  If `content' is a file,
+  ;; `content-type' and `uri' are not used.
+  ;; Return the path to the file in the download directory.
+  (let* ((out-dir (make-pathname (download-dir) (today-dir)))
+         (out-file
+          (make-pathname out-dir
+                         (if content-is-path?
+                             (sha1sum content)
+                             (string->sha1sum content))
+                         (if content-is-path?
+                             (pathname-extension content)
+                             (mime-type->extension content-type)))))
+    (create-directory out-dir 'recursively)
+    (debug 1 "Writing ~a to ~a" (if content-is-path? content uri) out-file)
+    (if content-is-path?
+        (file-copy content out-file 'clobber)
+        (with-output-to-file out-file
+          (cut display content)))
+    out-file))
+
 (define-command 'uri
   #<#EOF
 uri <URI> [-c <comment>] [-t <tag>] [-u <extra uri>] [-d] [-D] [-T] [-s <summary>]
@@ -105,46 +129,45 @@ EOF
       ;; Keep the primary URI as the car
       (set! uris (reverse uris))
       (let ((primary-uri (car uris)))
-        (when (or use-page-title? force-download? download?)
-          (handle-exceptions exn
-              (begin
-                (warn "Could not download ~a." primary-uri)
-                (print-error-message exn))
-            (call-with-input-request*
-             (make-request uri: (uri-reference primary-uri))
-             #f
-             (lambda (port response)
-               (let* ((headers (response-headers response))
-                      (content-type (header-value 'content-type headers 'unknown))
-                      (download-content?
-                       (and download?
-                            (or force-download?
-                                (memq content-type
-                                      (downloadable-mime-types)))))
-                      (content (and download-content?
-                                    (begin
-                                      (debug 1 "Downloading ~a..." primary-uri)
-                                      (read-string #f port)))))
-                 (when (and use-page-title?
-                            (memq content-type (web-page-mime-types)))
-                   (debug 1 "Reading ~a..." primary-uri)
-                   (set! page-title
-                     (parse-title
-                      (if download-content?
-                          (if (> (string-length content) 10240)
-                              (substring content 0 10240)
-                              content)
-                          (read-string 10240 port)))))
-                 (when content
-                   (let ((out-dir (make-pathname (download-dir) (today-dir))))
-                     (set! out-file
-                       (make-pathname out-dir
-                                      (string->sha1sum content)
-                                      (mime-type->extension content-type)))
-                     (create-directory out-dir 'recursively)
-                     (debug 1 "Writing ~a to ~a" primary-uri out-file)
-                     (with-output-to-file out-file
-                       (cut display content)))))))))
+        (if (and (or force-download? download?)
+                 (string-prefix? "file://" primary-uri))
+            (set! out-file
+              (save-file (string-drop primary-uri 7) #t))
+            (when (or use-page-title? force-download? download?)
+              (handle-exceptions exn
+                  (begin
+                    (warn "Could not download ~a." primary-uri)
+                    (print-error-message exn))
+                (call-with-input-request*
+                 (make-request uri: (uri-reference primary-uri))
+                 #f
+                 (lambda (port response)
+                   (let* ((headers (response-headers response))
+                          (content-type
+                           (header-value 'content-type headers 'unknown))
+                          (download-content?
+                           (and download?
+                                (or force-download?
+                                    (memq content-type
+                                          (downloadable-mime-types)))))
+                          (content
+                           (and download-content?
+                                (begin
+                                  (debug 1 "Downloading ~a..." primary-uri)
+                                  (read-string #f port)))))
+                     (when (and use-page-title?
+                                (memq content-type (web-page-mime-types)))
+                       (debug 1 "Reading ~a..." primary-uri)
+                       (set! page-title
+                         (parse-title
+                          (if download-content?
+                              (if (> (string-length content) 10240)
+                                  (substring content 0 10240)
+                                  content)
+                              (read-string 10240 port)))))
+                     (when content
+                       (set! out-file
+                         (save-file content #f content-type primary-uri)))))))))
         (let* ((summary (or user-summary page-title 'null))
                (files (if out-file
                           (list (pathname-strip-download-dir out-file))
