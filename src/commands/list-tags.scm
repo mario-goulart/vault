@@ -1,11 +1,9 @@
-(define help-list-tags
+(define-command 'list-tags
   #<#EOF
 list-tags
   List tags.
 EOF
-)
-
-(define (cmd-list-tags)
-  (for-each (lambda (tag)
-              (print (car tag)))
-            (db-list-tags)))
+  (lambda (args)
+    (for-each (lambda (tag)
+                (print (car tag)))
+              (db-list-tags))))

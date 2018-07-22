@@ -2,15 +2,12 @@
 
 (initialize-home
  load-config
-
+ define-command
+ command-proc
+ command-help
+ command-name
+ *commands*
  usage
- help-note cmd-note
- help-list cmd-list
- help-list-tags cmd-list-tags
- help-uri cmd-uri
- help-del cmd-del
- help-search cmd-search
- help-edit cmd-edit
 
  ;; for tests
  today-dir
@@ -20,6 +17,15 @@
 (use data-structures extras irregex files posix ports srfi-1 srfi-13 utils)
 (use html-parser http-client intarweb simple-sha1 uri-common)
 (use vault-config vault-utils vault-mime-types vault-db)
+
+(define *commands* '())
+
+(define-record command name help proc)
+
+(define (define-command name help proc)
+  (set! *commands*
+    (cons (cons name (make-command name help proc))
+          *commands*)))
 
 (include "commands/note.scm")
 (include "commands/uri.scm")
@@ -32,7 +38,7 @@
 ;;; Initialization
 (define (initialize-home)
   (unless (file-exists? (db-file))
-    (create-directory (vault-home) 'recusively)
+    (create-directory (vault-home) 'recursively)
     (initialize-database (db-file)))
   (create-directory (download-dir) 'recursively))
 
@@ -53,22 +59,14 @@ Usage: #this <command> [<options>]
 
 <commands>:
 
-#help-note
-
-#help-list
-
-#help-list-tags
-
-#help-uri
-
-#help-del
-
-#help-search
-
-#help-edit
 
 EOF
-             port)
+)
+    (for-each (lambda (cmd)
+                (display (command-help cmd) port)
+                (newline)
+                (newline))
+              (map cdr *commands*))
     (when exit-code
       (exit exit-code))))
 

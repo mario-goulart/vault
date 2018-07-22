@@ -1,11 +1,11 @@
 (module vault-cmd ()
 
 (import chicken scheme)
-(use files posix)
+(use data-structures files posix)
 (use vault-utils vault-lib vault-db)
 
 ;;; Initial command line parsing
-(let* ((args (command-line-arguments)))
+(let ((args (command-line-arguments)))
   (when (null? args)
     (usage 1))
   (when (or (member "-h" args)
@@ -25,15 +25,9 @@
   ;; without displaying the prompt, in case user terminates the pager.
   (set-signal-handler! signal/pipe void)
 
-  (let ((cmd (string->symbol (car args))))
-    (case cmd
-      ((note) (cmd-note (cdr args)))
-      ((list) (cmd-list (cdr args)))
-      ((list-tags) (cmd-list-tags))
-      ((uri) (cmd-uri (cdr args)))
-      ((del) (cmd-del (cdr args)))
-      ((search) (cmd-search (cdr args)))
-      ((edit) (cmd-edit (cdr args)))
-      (else (die! "Invalid command: ~a" cmd)))))
+  (let ((cmd-name (string->symbol (car args))))
+    (or (and-let* ((command (alist-ref cmd-name *commands*)))
+          ((command-proc command) (cdr args)))
+        (die! "Invalid command: ~a" cmd-name))))
 
 ) ;; end module
