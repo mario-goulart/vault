@@ -7,6 +7,7 @@
  command-help
  command-name
  *commands*
+ help-option?
  usage
 
  ;; for tests
@@ -26,6 +27,21 @@
   (set! *commands*
     (cons (cons name (make-command name help proc))
           *commands*)))
+
+(define (help-option? opt)
+  (let ((opt-sym (string->symbol opt)))
+    (or (eqv? opt-sym '-h)
+        (eqv? opt-sym '-help)
+        (eqv? opt-sym '--help))))
+
+(define (command-usage command #!optional exit-code)
+  (let ((port (if (and exit-code (not (zero? exit-code)))
+                  (current-error-port)
+                  (current-output-port))))
+    (display (command-help (alist-ref command *commands*)) port)
+    (newline port)
+    (when exit-code
+      (exit exit-code))))
 
 (include "commands/note.scm")
 (include "commands/uri.scm")

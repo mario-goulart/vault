@@ -8,10 +8,6 @@
 (let ((args (command-line-arguments)))
   (when (null? args)
     (usage 1))
-  (when (or (member "-h" args)
-            (member "-help" args)
-            (member "--help" args))
-    (usage 0))
 
   (load-config
    (or (get-environment-variable "VAULT_CONFIG")
@@ -20,6 +16,9 @@
   (initialize-home)
 
   (maybe-migrate-db!)
+
+  (when (help-option? (car args))
+    (usage 0))
 
   ;; Ignore SIGPIPE, otherwise with-output-to-pipe would make vault exit
   ;; without displaying the prompt, in case user terminates the pager.
