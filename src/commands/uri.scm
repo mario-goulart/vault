@@ -1,12 +1,14 @@
 (define help-uri
   #<#EOF
-uri <URI> [-c <comment>] [-t <tag>] [-u <extra uri>] [-D] [-T] [-s <summary>]
+uri <URI> [-c <comment>] [-t <tag>] [-u <extra uri>] [-d] [-D] [-T] [-s <summary>]
   Add <URI>.  If <URI> is an HTML page and -T or -s are not provided,
   this command will automatically prepend the HTML page title to
   <comment> (-T disables this behavior).  If <URI>'s content type is in
   the `downloadable-mime-types' list (a configurable parameter), this
   command will download it and save it under #(download-dir), unless -D
-  is given.  -u and -t may be specified multiple times.
+  is given.  If -d is provided, the <URI> will be downloaded even if its
+  content type is not in the `downloadable-mime-types' list (e.g., for
+  HTML documents). -u and -t may be specified multiple times.
 EOF
 )
 
@@ -68,6 +70,7 @@ EOF
         (comment #f)
         (page-title #f)
         (download? #t)
+        (force-download? #f)
         (out-file #f)
         (user-summary #f)
         (use-page-title? #t))
@@ -90,14 +93,19 @@ EOF
                 ((string=? arg "-D")
                  (set! download? #f)
                  (loop (cdr args)))
+                ((string=? arg "-d")
+                 (set! force-download? #t)
+                 (loop (cdr args)))
                 ((string=? arg "-T")
                  (set! use-page-title? #f)
                  (loop (cdr args)))
                 (else (die! "uri: invalid syntax"))))))
+    (when (and force-download? (not download?))
+      (die! "Using -d and -D together doesn't make sense."))
     ;; Keep the primary URI as the car
     (set! uris (reverse uris))
     (let ((primary-uri (car uris)))
-      (when (or use-page-title? download?)
+      (when (or use-page-title? force-download? download?)
         (handle-exceptions exn
           (begin
             (warn "Could not download ~a." primary-uri)
@@ -108,35 +116,39 @@ EOF
            (lambda (port response)
              (let* ((headers (response-headers response))
                     (content-type (header-value 'content-type headers 'unknown))
-                    (data (cond ((and download?
-                                      (memq content-type
-                                            (downloadable-mime-types)))
-                                 (debug 1 "Downloading ~a..." primary-uri)
-                                 (read-string #f port))
-                                (use-page-title?
-                                 (and (memq content-type (web-page-mime-types))
-                                      (begin
-                                        (debug 1 "Reading ~a..." primary-uri)
-                                        (parse-title
-                                         (read-string 10240 port)))))
-                                (else #f))))
-               (when data
-                 (if (and use-page-title?
+                    (download-content?
+                     (and download?
+                          (or force-download?
+                              (memq content-type
+                                    (downloadable-mime-types)))))
+                    (content (and download-content?
+                                  (begin
+                                    (debug 1 "Downloading ~a..." primary-uri)
+                                    (read-string #f port)))))
+               (when (and use-page-title?
                           (memq content-type (web-page-mime-types)))
-                     (set! page-title data)
-                     (let ((out-dir (make-pathname (download-dir) (today-dir))))
-                       (set! out-file
-                         (make-pathname out-dir
-                                        (string->sha1sum data)
-                                        (mime-type->extension content-type)))
-                       (create-directory out-dir 'recursively)
-                       (debug 1 "Writing ~a to ~a" primary-uri out-file)
-                       (with-output-to-file out-file
-                         (cut display data)))))))))))
+                 (debug 1 "Reading ~a..." primary-uri)
+                 (set! page-title
+                   (parse-title
+                    (if download-content?
+                        (if (> (string-length content) 10240)
+                            (substring content 0 10240)
+                            content)
+                        (read-string 10240 port)))))
+               (when content
+                 (let ((out-dir (make-pathname (download-dir) (today-dir))))
+                   (set! out-file
+                     (make-pathname out-dir
+                                    (string->sha1sum content)
+                                    (mime-type->extension content-type)))
+                   (create-directory out-dir 'recursively)
+                   (debug 1 "Writing ~a to ~a" primary-uri out-file)
+                   (with-output-to-file out-file
+                     (cut display content)))))))))
       (let* ((summary (or user-summary page-title 'null))
              (files (if out-file
                         (list (pathname-strip-download-dir out-file))
                         '()))
              (obj-id
               (db-insert-object summary (or comment 'null) tags files uris)))
-        (print-vault-obj (db-get-vault-object-by-id obj-id)))))
+        (print-vault-obj (db-get-vault-object-by-id obj-id))))))
