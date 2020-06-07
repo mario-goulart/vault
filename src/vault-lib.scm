@@ -106,11 +106,9 @@ EOF
     (with-output-to-string
       (lambda ()
         (if no-id
-            (unless (null? summary)
+            (when (and summary (not (null? summary)))
               (print summary))
-            (printf "[~a] ~a\n"
-                    (vault-obj-id obj)
-                    (if (null? summary) "" summary)))
+            (printf "[~a] ~a\n" (vault-obj-id obj) (or summary "")))
         (unless (null? tags)
           (printf "  tags: ~S\n" tags))
         (unless (null? uris)
@@ -123,29 +121,16 @@ EOF
           (for-each (lambda (file)
                       (print "    * " (make-pathname (download-dir) file)))
                     files))
-        (unless (null? comment)
+        (when (and comment (not (null? comment)))
           (printf "  comment: ~a\n" comment))
-        (printf "  creation time: ~a" creation-time)
-        (unless (equal? creation-time last-modified)
+        (printf "  creation time: ~a" (seconds->string creation-time))
+        (when (and last-modified
+                   (not (equal? creation-time last-modified)))
           (newline)
-          (printf "  last modified: ~a" last-modified))))))
+          (printf "  last modified: ~a" (seconds->string last-modified)))))))
 
 (define (print-vault-obj obj)
   (print (format-vault-obj obj)))
-
-(define (db-time->seconds db-time)
-  (local-time->seconds (string->time db-time "%Y-%m-%d %H:%M:%S")))
-
-(define (vault-obj->alist obj)
-  `((id . ,(vault-obj-id obj))
-    (summary . ,(vault-obj-summary obj))
-    (comment . ,(vault-obj-comment obj))
-    (creation-time . ,(db-time->seconds (vault-obj-creation-time obj)))
-    (modification-time . ,(db-time->seconds (vault-obj-modification-time obj)))
-    (tags . ,(vault-obj-tags obj))
-    (files . ,(vault-obj-files obj))
-    (uris . ,(vault-obj-uris obj))
-    ))
 
 ;; Adapted from chicken-doc (thanks zb)
 (define (with-output-to-pager thunk)
@@ -197,5 +182,25 @@ EOF
           (begin
             (printf "~a: invalid option.\n" choice)
             (loop))))))
+
+(define (pad-number n zeroes)
+  (define (pad num len)
+    (let ((str (if (string? num) num (number->string num))))
+      (if (string-null? str)
+          ""
+          (if (>= (string-length str) len)
+              str
+              (string-pad str len #\0)))))
+  (let ((len (string-length (->string n))))
+    (if (= len zeroes)
+        (number->string n)
+        (pad n zeroes))))
+
+(define (today-dir)
+  (let* ((now (seconds->local-time))
+         (day (pad-number (vector-ref now 3) 2))
+         (month (pad-number (add1 (vector-ref now 4)) 2))
+         (year (number->string (+ 1900 (vector-ref now 5)))))
+    (make-pathname (list year month) day)))
 
 ) ;; end module

@@ -9,20 +9,21 @@ EOF
       (command-usage 'del 0))
     (for-each
      (lambda (id)
-       (let ((obj (db-get-vault-object-by-id id)))
+       (let ((obj (db-get-object-by-id id)))
          (when obj
            (let ((files (vault-obj-files obj)))
              (for-each
               (lambda (file)
-                (let ((objs-owning-file (db-get-obj-ids-linked-to-file file)))
-                  (if (null? (cdr objs-owning-file))
+                (let ((obj-ids-owning-file (db-get-object-ids-linked-to-file file)))
+                  ;; obj-ids-owning-file contains at least `id'
+                  (if (null? (cdr obj-ids-owning-file))
                       (begin
                         (info "Deleting file ~a linked to object ~a" file id)
                         (delete-file* (make-pathname (download-dir) file)))
                       (info "Keeping file ~a as it is linked to the following objects: ~a"
                             file
                             (string-intersperse
-                             (map number->string (delete id objs-owning-file))
+                             (map number->string (delete id obj-ids-owning-file))
                              ", ")))))
               files)
              (db-delete-object-by-id id)))))

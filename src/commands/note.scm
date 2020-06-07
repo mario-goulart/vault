@@ -24,5 +24,5 @@ EOF
                    (loop (cddr args)))
                   (else (die! "note: invalid syntax"))))))
       (let ((obj-id
-             (db-insert-object summary (or comment 'null) tags '() '())))
-        (print-vault-obj (db-get-vault-object-by-id obj-id))))))
+             (db-insert-object summary comment tags '() '())))
+        (print-vault-obj (db-get-object-by-id obj-id))))))

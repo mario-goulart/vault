@@ -10,19 +10,6 @@
           (string-trim-both title)
         html-strip))))
 
-(define (pad-number n zeroes)
-  (define (pad num len)
-    (let ((str (if (string? num) num (number->string num))))
-      (if (string-null? str)
-          ""
-          (if (>= (string-length str) len)
-              str
-              (string-pad str len #\0)))))
-  (let ((len (string-length (->string n))))
-    (if (= len zeroes)
-        (number->string n)
-        (pad n zeroes))))
-
 (define (path-separator? char)
   (or (char=? char #\/)
       (and (eqv? (software-type) 'windows)
@@ -40,13 +27,6 @@
                     (loop (substring relpath 1))
                     relpath))))
         path)))
-
-(define (today-dir)
-  (let* ((now (seconds->local-time))
-         (day (pad-number (vector-ref now 3) 2))
-         (month (pad-number (add1 (vector-ref now 4)) 2))
-         (year (number->string (+ 1900 (vector-ref now 5)))))
-    (make-pathname (list year month) day)))
 
 (define (save-file content content-is-path? #!optional content-type uri)
   ;; Save `content' into the download directory, under a directory
@@ -168,10 +148,10 @@ EOF
                      (when content
                        (set! out-file
                          (save-file content #f content-type primary-uri)))))))))
-        (let* ((summary (or user-summary page-title 'null))
+        (let* ((summary (or user-summary page-title))
                (files (if out-file
                           (list (pathname-strip-download-dir out-file))
                           '()))
                (obj-id
-                (db-insert-object summary (or comment 'null) tags files uris)))
-          (print-vault-obj (db-get-vault-object-by-id obj-id)))))))
+                (db-insert-object summary comment tags files uris)))
+          (print-vault-obj (db-get-object-by-id obj-id)))))))

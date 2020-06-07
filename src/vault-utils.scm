@@ -25,6 +25,31 @@
            (vault-obj-uris obj)
            (vault-obj-comment obj)))
 
+(define (vault-obj->alist obj)
+  `((id                . ,(vault-obj-id obj))
+    (summary           . ,(vault-obj-summary obj))
+    (comment           . ,(vault-obj-comment obj))
+    (creation-time     . ,(vault-obj-creation-time obj))
+    (modification-time . ,(vault-obj-modification-time obj))
+    (tags              . ,(vault-obj-tags obj))
+    (files             . ,(vault-obj-files obj))
+    (uris              . ,(vault-obj-uris obj))
+    ))
+
+(define (alist->vault-obj alist)
+  (make-vault-obj
+   (or (alist-ref 'id alist)
+       (error 'alist->vault-obj "No id field in ~S" alist))
+   (alist-ref 'summary alist)
+   (alist-ref 'comment alist)
+   (or (alist-ref 'creation-time alist)
+       (error 'alist->vault-obj "No creation-time in ~S" alist))
+   (alist-ref 'modification-time alist)
+   (or (alist-ref 'tags alist) '())
+   (or (alist-ref 'files alist) '())
+   (or (alist-ref 'uris alist) '())
+   ))
+
 ;;; Messages
 (define (printer port prefix fmt args)
   (apply fprintf `(,port
@@ -48,6 +73,5 @@
 (define (die! fmt . args)
   (apply problem (cons fmt args))
   (exit 1))
-
 
 ) ;; end module

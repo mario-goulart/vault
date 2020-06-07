@@ -15,8 +15,6 @@
 
   (initialize-home)
 
-  (maybe-migrate-db!)
-
   (when (help-option? (car args))
     (usage 0))
 
@@ -26,7 +24,9 @@
 
   (let ((cmd-name (string->symbol (car args))))
     (or (and-let* ((command (alist-ref cmd-name *commands*)))
-          ((command-proc command) (cdr args)))
+          (db (db-read))
+          ((command-proc command) (cdr args))
+          (db-write!))
         (die! "Invalid command: ~a" cmd-name))))
 
 ) ;; end module

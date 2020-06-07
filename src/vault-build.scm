@@ -4,7 +4,7 @@
 
 (define csc-options
   (if debug-build?
-      '(-S -O0 -d2)
+      '(-S -O0 -d3)
       '(-O3 -d0)))
 
 (define (mod.so mod)
