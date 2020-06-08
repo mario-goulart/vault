@@ -133,10 +133,15 @@ EOF
 (define (print-vault-obj obj)
   (print (format-vault-obj obj)))
 
+(define (db-time->seconds db-time)
+  (local-time->seconds (string->time db-time "%Y-%m-%d %H:%M:%S")))
+
 (define (vault-obj->alist obj)
   `((id . ,(vault-obj-id obj))
     (summary . ,(vault-obj-summary obj))
     (comment . ,(vault-obj-comment obj))
+    (creation-time . ,(db-time->seconds (vault-obj-creation-time obj)))
+    (modification-time . ,(db-time->seconds (vault-obj-modification-time obj)))
     (tags . ,(vault-obj-tags obj))
     (files . ,(vault-obj-files obj))
     (uris . ,(vault-obj-uris obj))
