@@ -14,10 +14,37 @@
  today-dir
  )
 
-(import chicken scheme)
-(use data-structures extras irregex files posix ports srfi-1 srfi-13 utils)
-(use html-parser http-client intarweb simple-sha1 uri-common)
-(use vault-config vault-utils vault-mime-types vault-db)
+(import scheme)
+(cond-expand
+  (chicken-4
+   (import chicken)
+   (use data-structures extras irregex files posix ports srfi-1 srfi-13 utils)
+   (use html-parser http-client intarweb simple-sha1 uri-common)
+   (use vault-config vault-utils vault-mime-types vault-db)
+   (define file-readable? file-read-access?)
+   (define copy-file file-copy)
+   (define set-environment-variable! setenv))
+  (chicken-5
+   (import (chicken base)
+           (chicken condition)
+           (chicken file)
+           (chicken fixnum)
+           (chicken format)
+           (chicken io)
+           (chicken irregex)
+           (chicken pathname)
+           (chicken platform)
+           (chicken port)
+           (chicken pretty-print)
+           (chicken process)
+           (chicken process-context)
+           (chicken string)
+           (chicken time)
+           (chicken time posix))
+   (import html-parser http-client intarweb simple-sha1 srfi-1 srfi-13 uri-common)
+   (import vault-config vault-utils vault-mime-types vault-db))
+  (else
+   (error "Unsupported CHICKEN version.")))
 
 (define *commands* '())
 
@@ -59,7 +86,8 @@
   (create-directory (download-dir) 'recursively))
 
 (define (load-config config-file)
-  (cond ((file-read-access? config-file)
+  (cond ((and (file-exists? config-file)
+              (file-readable? config-file))
          (debug 2 "Loading user configuration file ~a" config-file)
          (load config-file))
         (else
@@ -140,7 +168,7 @@ EOF
          (thunk))  ; Don't page if stdout is not a TTY.
         (else
          (unless (get-environment-variable "LESS")
-           (setenv "LESS" "FRXis"))  ; Default 'less' options
+           (set-environment-variable! "LESS" "FRXis"))  ; Default 'less' options
          (let ((pager (or (get-environment-variable "VAULT_PAGER")
                           (get-environment-variable "PAGER")
                           (case (software-type)

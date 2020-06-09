@@ -1,4 +1,8 @@
 *~
+*.o
 *.so
 *.import.*
-src/vault
+*.link
+*.build.sh
+*.install.sh
+vault

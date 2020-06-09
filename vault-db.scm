@@ -14,9 +14,23 @@
  db-update-object-by-id
  db-delete-object-by-id)
 
-(import chicken scheme)
-(use data-structures extras files irregex posix srfi-1 srfi-13)
-(use vault-config vault-utils)
+(import scheme)
+(cond-expand
+  (chicken-4
+   (import chicken)
+   (use data-structures extras files irregex posix srfi-1 srfi-13)
+   (use vault-config vault-utils))
+  (chicken-5
+   (import (chicken base)
+           (chicken io)
+           (chicken irregex)
+           (chicken pretty-print)
+           (chicken sort)
+           (chicken time))
+   (import srfi-1 srfi-13)
+   (import vault-config vault-utils))
+  (else
+   (error "Unsupported CHICKEN version.")))
 
 (cond-expand
   (chicken-4

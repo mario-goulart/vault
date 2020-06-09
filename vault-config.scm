@@ -8,8 +8,17 @@
  downloadable-mime-types
  web-page-mime-types)
 
-(import chicken scheme)
-(use files posix)
+(import scheme)
+(cond-expand
+  (chicken-4
+   (import chicken)
+   (use files posix))
+  (chicken-5
+   (import (chicken base)
+           (chicken pathname)
+           (chicken process-context)))
+  (else
+   (error "Unsupported CHICKEN version.")))
 
 ;; Regular srfi-39 parameters don't work well when we have
 ;; interdependencies among them.  Example:

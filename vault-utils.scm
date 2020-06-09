@@ -1,8 +1,18 @@
 (module vault-utils *
 
-(import chicken scheme)
-(use data-structures extras)
-(use vault-config)
+(import scheme)
+(cond-expand
+  (chicken-4
+   (import chicken)
+   (use data-structures extras)
+   (use vault-config))
+  (chicken-5
+   (import (chicken base)
+           (chicken format)
+           (chicken string))
+   (import vault-config))
+  (else
+   (error "Unsupported CHICKEN version.")))
 
 (define-record vault-obj
   id

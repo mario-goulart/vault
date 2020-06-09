@@ -1,0 +1,36 @@
+;;; awful.egg -*- scheme -*-
+
+((synopsis "A tool to track things")
+ (author "Mario Domenech Goulart")
+ (license "BSD")
+ (category tools)
+ (dependencies html-parser
+               (http-client "0.7.2")
+               openssl ;; optional for http-client, but we want it for https
+               simple-sha1
+               srfi-1
+               srfi-13)
+ (test-dependencies test)
+ (component-options
+  (csc-options "-O3" "-d1"))
+ (components
+  (extension vault-config)
+  (extension vault-mime-types)
+  (extension vault-utils
+             (component-dependencies vault-config))
+  (extension vault-db
+             (component-dependencies vault-config vault-utils))
+  (extension vault-lib
+             (component-dependencies
+              vault-config vault-utils vault-mime-types vault-db)
+             (source-dependencies
+              "vault-version.scm"
+              "commands/note.scm"
+              "commands/uri.scm"
+              "commands/list.scm"
+              "commands/list-tags.scm"
+              "commands/del.scm"
+              "commands/search.scm"
+              "commands/edit.scm"))
+  (program vault
+           (component-dependencies vault-utils vault-lib vault-db))))

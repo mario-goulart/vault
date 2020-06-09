@@ -47,7 +47,7 @@
     (create-directory out-dir 'recursively)
     (debug 1 "Writing ~a to ~a" (if content-is-path? content uri) out-file)
     (if content-is-path?
-        (file-copy content out-file 'clobber)
+        (copy-file content out-file 'clobber)
         (with-output-to-file out-file
           (cut display content)))
     out-file))

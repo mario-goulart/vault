@@ -2,8 +2,15 @@
 
 (mime-type->extension)
 
-(import chicken scheme)
-(use data-structures)
+(import scheme)
+(cond-expand
+  (chicken-4
+   (import chicken)
+   (use data-structures))
+  (chicken-5
+   (import (chicken base)))
+  (else
+   (error "Unsupported CHICKEN version.")))
 
 (define mime-types/extensions
   '((application/envoy . "evy")

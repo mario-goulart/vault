@@ -1,8 +1,19 @@
 (module vault-cmd ()
 
-(import chicken scheme)
-(use data-structures files posix)
-(use vault-utils vault-lib vault-db)
+(import scheme)
+(cond-expand
+  (chicken-4
+   (import chicken)
+   (use data-structures files posix)
+   (use vault-utils vault-lib vault-db))
+  (chicken-5
+   (import (chicken base)
+           (chicken pathname)
+           (chicken process-context)
+           (chicken process signal))
+   (import vault-utils vault-lib vault-db))
+  (else
+   (error "Unsupported CHICKEN version.")))
 
 ;;; Initial command line parsing
 (let ((args (command-line-arguments)))
