@@ -8,6 +8,8 @@ EOF
   (lambda (args)
     (when (null? args)
       (usage 1))
+    (when (help-option? (car args))
+      (command-usage 'note 0))
     (let ((summary (car args))
           (tags '())
           (comment #f))
