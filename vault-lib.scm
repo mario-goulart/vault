@@ -9,6 +9,7 @@
  *commands*
  help-option?
  usage
+ save-file
 
  ;; for tests
  today-dir
@@ -70,6 +71,7 @@
     (when exit-code
       (exit exit-code))))
 
+(include "commands/attach.scm")
 (include "commands/note.scm")
 (include "commands/uri.scm")
 (include "commands/list.scm")
@@ -230,5 +232,48 @@ EOF
          (month (pad-number (add1 (vector-ref now 4)) 2))
          (year (number->string (+ 1900 (vector-ref now 5)))))
     (make-pathname (list year month) day)))
+
+
+(define (path-separator? char)
+  (or (char=? char #\/)
+      (and (eqv? (software-type) 'windows)
+           (char=? char #\\))))
+
+(define (pathname-strip-download-dir path)
+  (let ((path (normalize-pathname path))
+        (ddir (normalize-pathname (download-dir))))
+    (if (string-prefix? ddir path)
+        (let ((relpath (substring path (string-length ddir))))
+          (let loop ((relpath relpath))
+            (if (string-null? relpath)
+                ""
+                (if (path-separator? (string-ref relpath 0))
+                    (loop (substring relpath 1))
+                    relpath))))
+        path)))
+
+(define (save-file content content-is-path? #!optional content-type uri)
+  ;; Save `content' into the download directory, under a directory
+  ;; named after today's date and using the SHA1 sum of `content'.  If
+  ;; `content' is a path to a local file, just copy the file,
+  ;; otherwise dump it to the output file.  If `content' is a file,
+  ;; `content-type' and `uri' are not used.
+  ;; Return the path to the file in the download directory.
+  (let* ((out-dir (make-pathname (download-dir) (today-dir)))
+         (out-file
+          (make-pathname out-dir
+                         (if content-is-path?
+                             (sha1sum content)
+                             (string->sha1sum content))
+                         (if content-is-path?
+                             (pathname-extension content)
+                             (mime-type->extension content-type)))))
+    (create-directory out-dir 'recursively)
+    (debug 1 "Writing ~a to ~a" (if content-is-path? content uri) out-file)
+    (if content-is-path?
+        (copy-file content out-file 'clobber)
+        (with-output-to-file out-file
+          (cut display content)))
+    out-file))
 
 ) ;; end module

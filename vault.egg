@@ -25,6 +25,7 @@
               vault-config vault-utils vault-mime-types vault-db)
              (source-dependencies
               "vault-version.scm"
+              "commands/attach.scm"
               "commands/note.scm"
               "commands/uri.scm"
               "commands/list.scm"
