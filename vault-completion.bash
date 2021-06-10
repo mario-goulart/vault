@@ -1,3 +1,13 @@
+_VAULT_TAGS_CACHE_FILE=$HOME/.vault/tags.cache
+
+_vault_tags() {
+    if [ -e "$_VAULT_TAGS_CACHE_FILE" ]; then
+        cat "$_VAULT_TAGS_CACHE_FILE"
+    else
+        vault list-tags
+    fi
+}
+
 _vault() {
     local cur prev command commands
     COMPREPLY=()
@@ -7,7 +17,7 @@ _vault() {
     commands="attach note list list-tags uri del search edit"
 
     if [ "$prev" = "-t" ] || [ "$command" = "list" -a "$prev" = "-T" ] ; then
-        COMPREPLY=($(compgen -W "$(vault list-tags)" -- "$cur"))
+        COMPREPLY=($(compgen -W "$(_vault_tags)" -- "$cur"))
         return 0
     elif [ "$prev" = "vault" ]; then
         COMPREPLY=($(compgen -W "$commands" -- "$cur"))

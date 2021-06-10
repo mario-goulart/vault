@@ -83,7 +83,12 @@
       (for-each
        (lambda (obj)
          (pp (vault-obj->alist obj)))
-       (map cdr (db))))))
+       (map cdr (db)))))
+
+  (when (tags-cache-file)
+    (with-output-to-file (tags-cache-file)
+      (lambda ()
+        (for-each print (db-list-tags))))))
 
 (define (db-get-object-by-id id)
   (let loop ((db (db)))

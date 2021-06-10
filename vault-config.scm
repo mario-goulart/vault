@@ -2,6 +2,7 @@
 
 (vault-home
  db-file
+ tags-cache-file
  download-dir
  debug-level
  vault-editor
@@ -51,6 +52,10 @@
 
 (define-dynamic db-file
   (make-pathname (vault-home) "vault.db"))
+
+(define-dynamic tags-cache-file
+  ;; If bound to #f, tags are not cached
+  (make-pathname (vault-home) "tags.cache"))
 
 (define-dynamic download-dir
   (make-pathname (vault-home) "downloads"))
