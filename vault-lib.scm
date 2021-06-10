@@ -9,6 +9,8 @@
  *commands*
  help-option?
  parse-option/arg
+ pathname-strip-download-dir
+ print-vault-obj
  usage
  save-file
 
