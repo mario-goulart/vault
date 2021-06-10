@@ -6,6 +6,7 @@
  command-proc
  command-help
  command-name
+ command-usage
  *commands*
  help-option?
  parse-option/arg
