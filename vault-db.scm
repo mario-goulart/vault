@@ -7,7 +7,6 @@
  db-insert-object
  db-list-tags
  db-search
- db-list-tags
  db-get-object-ids-linked-to-file
  db-get-object-by-id
  db-delete-object-by-id
@@ -94,9 +93,6 @@
           (if (= (car id/obj) id)
               (cdr id/obj)
               (loop (cdr db)))))))
-
-(define (db-list-tags)
-  (void))
 
 (define (db-update-object-by-id id new-obj)
   (db
