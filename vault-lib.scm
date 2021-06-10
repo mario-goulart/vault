@@ -8,6 +8,7 @@
  command-name
  *commands*
  help-option?
+ parse-option/arg
  usage
  save-file
 
