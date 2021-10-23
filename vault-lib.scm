@@ -129,14 +129,24 @@ EOF
       (die! "~a requires an argument." option)
       (cadr args)))
 
+(define (ensure-integer n)
+  ;; C4's seconds->string tolerates inexact numbers, but C5's
+  ;; doesn't. Database files written by C4 might contain seconds
+  ;; represented as inexact numbers.
+  (cond-expand
+   (chicken-5
+    (and n (inexact->exact n)))
+   (chicken-4
+    n)))
+
 (define (format-vault-obj obj #!key no-id)
   (let ((tags (vault-obj-tags obj))
         (files (vault-obj-files obj))
         (uris (vault-obj-uris obj))
         (summary (vault-obj-summary obj))
         (comment (vault-obj-comment obj))
-        (creation-time (vault-obj-creation-time obj))
-        (last-modified (vault-obj-modification-time obj)))
+        (creation-time (ensure-integer (vault-obj-creation-time obj)))
+        (last-modified (ensure-integer (vault-obj-modification-time obj))))
     (with-output-to-string
       (lambda ()
         (if no-id
