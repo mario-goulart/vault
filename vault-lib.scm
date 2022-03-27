@@ -14,6 +14,7 @@
  print-vault-obj
  usage
  save-file
+ delete-object-by-id
 
  ;; for tests
  today-dir
@@ -289,5 +290,25 @@ EOF
         (with-output-to-file out-file
           (cut display content)))
     out-file))
+
+(define (delete-object-by-id id)
+  (let ((obj (db-get-object-by-id id)))
+    (when obj
+      (let ((files (vault-obj-files obj)))
+        (for-each
+         (lambda (file)
+           (let ((obj-ids-owning-file (db-get-object-ids-linked-to-file file)))
+             ;; obj-ids-owning-file contains at least `id'
+             (if (null? (cdr obj-ids-owning-file))
+                 (begin
+                   (info "Deleting file ~a linked to object ~a" file id)
+                   (delete-file* (make-pathname (download-dir) file)))
+                 (info "Keeping file ~a as it is linked to the following objects: ~a"
+                       file
+                       (string-intersperse
+                        (map number->string (delete id obj-ids-owning-file))
+                        ", ")))))
+         files)
+        (db-delete-object-by-id id)))))
 
 ) ;; end module
