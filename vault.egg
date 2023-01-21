@@ -1,4 +1,4 @@
-;;; awful.egg -*- scheme -*-
+;;; vault.egg -*- scheme -*-
 
 ((synopsis "A tool to track things")
  (author "Mario Domenech Goulart")
