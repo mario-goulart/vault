@@ -9,7 +9,6 @@
  db-search
  db-get-object-ids-linked-to-file
  db-get-object-by-id
- db-delete-object-by-id
  db-update-object-by-id
  db-delete-object-by-id)
 
@@ -110,9 +109,6 @@
                 (cons id new-obj)
                 id/obj)
             (loop (cdr db))))))))
-
-(define (db-delete-object-by-id . ids)
-  (void))
 
 (define (db-search regex excepts case-insensitive?)
   (let ((objs (map cdr (db)))
