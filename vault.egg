@@ -4,7 +4,8 @@
  (author "Mario Domenech Goulart")
  (license "BSD")
  (category tools)
- (dependencies html-parser
+ (dependencies commands
+               html-parser
                (http-client "0.7.2")
                openssl ;; optional for http-client, but we want it for https
                simple-sha1
