@@ -11,6 +11,7 @@
            (chicken pathname)
            (chicken process-context)
            (chicken process signal))
+   (import commands)
    (import vault-utils vault-lib vault-db))
   (else
    (error "Unsupported CHICKEN version.")))
@@ -18,7 +19,7 @@
 ;;; Initial command line parsing
 (let ((args (command-line-arguments)))
   (when (null? args)
-    (usage 1))
+    (show-main-help 1))
 
   (load-config
    (or (get-environment-variable "VAULT_CONFIG")
@@ -26,15 +27,15 @@
 
   (initialize-home)
 
-  (when (help-option? (car args))
-    (usage 0))
+  (when (member (car args) (help-options))
+    (show-main-help 0))
 
   ;; Ignore SIGPIPE, otherwise with-output-to-pipe would make vault exit
   ;; without displaying the prompt, in case user terminates the pager.
   (set-signal-handler! signal/pipe void)
 
   (let ((cmd-name (string->symbol (car args))))
-    (or (and-let* ((command (alist-ref cmd-name *commands*)))
+    (or (and-let* ((command (alist-ref cmd-name (commands))))
           (db (db-read))
           ((command-proc command) (cdr args))
           (db-write!))

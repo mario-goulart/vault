@@ -2,17 +2,9 @@
 
 (initialize-home
  load-config
- define-command
- command-proc
- command-help
- command-name
- command-usage
- *commands*
- help-option?
  parse-option/arg
  pathname-strip-download-dir
  print-vault-obj
- usage
  save-file
  delete-object-by-id
 
@@ -47,34 +39,10 @@
            (chicken string)
            (chicken time)
            (chicken time posix))
-   (import html-parser http-client intarweb simple-sha1 srfi-1 srfi-13 uri-common)
+   (import commands html-parser http-client intarweb simple-sha1 srfi-1 srfi-13 uri-common)
    (import vault-config vault-utils vault-mime-types vault-db))
   (else
    (error "Unsupported CHICKEN version.")))
-
-(define *commands* '())
-
-(define-record command name help proc)
-
-(define (define-command name help proc)
-  (set! *commands*
-    (cons (cons name (make-command name help proc))
-          *commands*)))
-
-(define (help-option? opt)
-  (let ((opt-sym (string->symbol opt)))
-    (or (eqv? opt-sym '-h)
-        (eqv? opt-sym '-help)
-        (eqv? opt-sym '--help))))
-
-(define (command-usage command #!optional exit-code)
-  (let ((port (if (and exit-code (not (zero? exit-code)))
-                  (current-error-port)
-                  (current-output-port))))
-    (display (command-help (alist-ref command *commands*)) port)
-    (newline port)
-    (when exit-code
-      (exit exit-code))))
 
 (include "commands/attach.scm")
 (include "commands/note.scm")
@@ -99,27 +67,6 @@
          (load config-file))
         (else
          (debug 2 "User config file doesn't exist or is not readable. Skipping."))))
-
-(define (usage #!optional exit-code)
-  (let ((this (pathname-strip-directory (program-name)))
-        (port (if (and exit-code (not (zero? exit-code)))
-                  (current-error-port)
-                  (current-output-port))))
-    (display #<#EOF
-Usage: #this <command> [<options>]
-
-<commands>:
-
-
-EOF
-)
-    (for-each (lambda (cmd)
-                (display (command-help cmd) port)
-                (newline)
-                (newline))
-              (map cdr *commands*))
-    (when exit-code
-      (exit exit-code))))
 
 ;;; utils
 ;;; Command line parsing

@@ -5,12 +5,9 @@ attach <id> <file-1> [... <file-n>]
   may be provided.
 EOF
   (lambda (args)
-    (when (and (not (null? args))
-               (help-option? (car args)))
-      (command-usage 'attach 0))
     (when (or (null? args)
               (null? (cdr args)))
-      (command-usage 'attach 1))
+      (show-command-help 'attach 1))
     (let* ((id (string->number (car args)))
            (new-files (cdr args))
            (obj (db-get-object-by-id id)))

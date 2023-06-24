@@ -4,9 +4,6 @@ del <id>
   Remove vault objects by id.  Multiple <id>s may be provided.
 EOF
   (lambda (args)
-    (when (and (not (null? args))
-               (help-option? (car args)))
-      (command-usage 'del 0))
     (for-each
      (lambda (id)
        (let ((obj (db-get-object-by-id id)))
