@@ -11,9 +11,6 @@
 
 (import scheme)
 (cond-expand
-  (chicken-4
-   (import chicken)
-   (use files posix))
   (chicken-5
    (import (chicken base)
            (chicken pathname)

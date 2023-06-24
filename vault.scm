@@ -2,10 +2,6 @@
 
 (import scheme)
 (cond-expand
-  (chicken-4
-   (import chicken)
-   (use data-structures files posix)
-   (use vault-utils vault-lib vault-db))
   (chicken-5
    (import (chicken base)
            (chicken pathname)

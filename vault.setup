@@ -1,5 +1,0 @@
-;; -*- scheme -*-
-(use posix make)
-
-(include "vault-version.scm")
-(include "vault-build.scm")

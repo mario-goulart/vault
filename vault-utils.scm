@@ -2,10 +2,6 @@
 
 (import scheme)
 (cond-expand
-  (chicken-4
-   (import chicken)
-   (use data-structures extras)
-   (use vault-config))
   (chicken-5
    (import (chicken base)
            (chicken format)

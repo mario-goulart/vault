@@ -14,14 +14,6 @@
 
 (import scheme)
 (cond-expand
-  (chicken-4
-   (import chicken)
-   (use data-structures extras irregex files posix ports srfi-1 srfi-13 utils)
-   (use html-parser http-client intarweb simple-sha1 uri-common)
-   (use vault-config vault-utils vault-mime-types vault-db)
-   (define file-readable? file-read-access?)
-   (define copy-file file-copy)
-   (define set-environment-variable! setenv))
   (chicken-5
    (import (chicken base)
            (chicken condition)
@@ -78,14 +70,7 @@
       (cadr args)))
 
 (define (ensure-integer n)
-  ;; C4's seconds->string tolerates inexact numbers, but C5's
-  ;; doesn't. Database files written by C4 might contain seconds
-  ;; represented as inexact numbers.
-  (cond-expand
-   (chicken-5
-    (and n (inexact->exact n)))
-   (chicken-4
-    n)))
+  (and n (inexact->exact n)))
 
 (define (format-vault-obj obj #!key no-id)
   (let ((tags (vault-obj-tags obj))

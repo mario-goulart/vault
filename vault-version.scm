@@ -1,1 +1,1 @@
-(define vault-version "1.0.0")
+(define vault-version "2.0.0")

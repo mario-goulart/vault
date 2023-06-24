@@ -1,19 +1,5 @@
 (import scheme)
 (cond-expand
-  (chicken-4
-   (use files extras posix setup-api)
-   (use vault-config vault-utils vault-db vault-lib)
-   (use test)
-
-   (define set-environment-variable! setenv)
-
-   (define vault
-     (make-pathname
-      (if (get-environment-variable "SALMONELLA_RUNNING")
-          #f ;; salmonella adds its REPO_PREFIX/bin to PATH
-          (program-path))
-      "vault")))
-
   (chicken-5
    (import (chicken file)
            (chicken format)
@@ -24,7 +10,6 @@
    (import vault-config vault-utils vault-db vault-lib)
    (import test)
    (define vault "vault"))
-
   (else
    (error "Unsupported CHICKEN version.")))
 

@@ -14,10 +14,6 @@
 
 (import scheme)
 (cond-expand
-  (chicken-4
-   (import chicken)
-   (use data-structures extras files irregex posix srfi-1 srfi-13)
-   (use vault-config vault-utils))
   (chicken-5
    (import (chicken base)
            (chicken io)
@@ -27,14 +23,6 @@
            (chicken time))
    (import srfi-1 srfi-13)
    (import vault-config vault-utils))
-  (else
-   (error "Unsupported CHICKEN version.")))
-
-(cond-expand
-  (chicken-4
-   (define read-list read-file))
-  (chicken-5
-   (void))
   (else
    (error "Unsupported CHICKEN version.")))
 
