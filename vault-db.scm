@@ -16,9 +16,12 @@
 (cond-expand
   (chicken-5
    (import (chicken base)
+           (chicken file)
            (chicken io)
            (chicken irregex)
+           (chicken pathname)
            (chicken pretty-print)
+           (chicken process-context)
            (chicken sort)
            (chicken time))
    (import srfi-1 srfi-13)
@@ -64,18 +67,31 @@
                     (list (cons new-id (alist->vault-obj new-item))))))
     new-id))
 
+(define (safe-update-file! file thunk)
+  ;; Warning: this might leak temporary files
+  (let ((old-tmpdir (get-environment-variable "TMPDIR")))
+    (set-environment-variable! "TMPDIR" (pathname-directory file))
+    (let ((tmp-file (create-temporary-file "vault.tmp")))
+      (with-output-to-file tmp-file thunk)
+      (rename-file tmp-file file 'clobber))
+    (if old-tmpdir
+        (set-environment-variable! "TMPDIR" old-tmpdir)
+        (unset-environment-variable! "TMPDIR"))))
+
 (define (db-write!)
-  (with-output-to-file (db-file)
-    (lambda ()
-      (for-each
-       (lambda (obj)
-         (pp (vault-obj->alist obj)))
-       (map cdr (db)))))
+  (safe-update-file!
+   (db-file)
+   (lambda ()
+     (for-each
+      (lambda (obj)
+        (pp (vault-obj->alist obj)))
+      (map cdr (db)))))
 
   (when (tags-cache-file)
-    (with-output-to-file (tags-cache-file)
-      (lambda ()
-        (for-each print (db-list-tags))))))
+    (safe-update-file!
+     (tags-cache-file)
+     (lambda ()
+       (for-each print (db-list-tags))))))
 
 (define (db-get-object-by-id id)
   (let loop ((db (db)))
